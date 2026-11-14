@@ -63,3 +63,39 @@ turn, stipends for the court, no force price on a strike.
   relics, the ruler's own thread, "a new person years later", the map and armies.
 - Not checked: the file inside the engine's sandbox (the test only checks it has no imports, no Unicode
   property escapes, no clock or random calls); lint (the engine's linter ignores `data/`).
+
+## Step 2: a world from a direction, and a reign through routes (2026-11-14)
+Addon commit `2e908fe`. Still no screens and no prose of a turn.
+
+- **`plugins/build/plugin.js`** (permissions routes, fs, llm). `POST /build/drafts { direction | answers, tone, lang }`
+  makes a draft; a questionnaire's answers are joined into one direction, so both doors use one pipeline.
+  `POST /build/drafts/<id>/step` runs the next of five steps (premise, fronts, court, seeds, book), one model
+  call each (two-phase: pass A asks and writes nothing), each prompt carrying what the earlier steps
+  wrote. An answer is read from `r.json` or from the outermost braces of the text, then cleaned (texts
+  cut, numbers bounded, unknown kinds dropped). A failed, non-JSON or too thin answer changes nothing but
+  `failed`; the caller may try again or send `{ plain: true }`, which fills the step with a plain default,
+  so a whole world can be made with no model. `.../trim { drop }` removes fronts, people, seeds, lore
+  entries (never below two powers, one of them open to talk). After each step code assembles `book` (a
+  lorebook in Roleplay's format: the premise as a constant entry, one entry per power, person and lore
+  entry) and `doc` (a Data Bank file of passages).
+- **`plugins/realm/plugin.js` routes** (permissions routes, fs): `POST /realm/saves { draft }` (needs premise,
+  fronts and court built; runs `cleanRealm`, writes `saves/<id>/realm.json`, `book.json`, `world.json`,
+  removes the draft), `GET /realm/saves`, `GET /realm/saves/<id>` (the state plus what code can work out:
+  per option whether it can be paid and the odds per mode, upkeep, yields, the next rank), `.../dawn`
+  (opens a turn once), `.../dusk { orders }` (resolves, closes, writes the turn's record
+  `saves/<id>/turns/<reign>-<turn>.json`: matters, results, facts; this is what the chronicle will be
+  written from), `.../succeed { person }`, `DELETE`.
+- **Checked:** 33 tests (`bun test`; the routes on a fake host that re-runs a route after each model call
+  and asserts pass A wrote nothing). `scripts/sandbox-run.ts <engine checkout>` runs the same flow through
+  the engine's real plugin runtime (QuickJS worker, the `host.fs` jail, two-phase calls) with a fake
+  model: a draft in five calls, a reign, turns until a fall, the files, a delete. A route takes about
+  50 to 110 ms there.
+- **Not checked:** any real model (do small free models return usable JSON for these five prompts, in
+  Ukrainian?); the app installed in a running engine (the manifest is a guess from the app-authoring
+  skill, there is no UI to open); the build prompts' size (not measured with `estimateTextTokens`).
+- **Not built:** the prose of a turn (report, chronicle, rumours, diaries: the court plugin), scenes,
+  import (a lorebook, a document, Roleplay cards), any screen.
+
+## The owner on the second mock (2026-11-14)
+"Frankly weak, but it will do for a start." The front needs a real design pass later (the code-drawn
+pictures and the layout did not convince); it is not the base to polish.
