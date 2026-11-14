@@ -56,8 +56,47 @@ Code knows only these; the world gives them names.
    prose may not name a result the dice did not give. The same call writes 3 to 5 rumours and one or two
    diary lines of courtiers from facts code selected (a rift, a new closeness, a stirred front).
 
-Two or three model calls a turn plus scenes; each returns small JSON. A turn can be undone (a snapshot per
-turn, as World DM's `pushSnap`).
+Two or three model calls a turn plus scenes; each returns small JSON. A finished turn is not undone (see
+Losing); a snapshot per turn is still kept, for repair after a crash, not for the player.
+
+## The RPG side (draft 2, proposed 2026-11-14 after the owner's "this reads as pure strategy"; not yet confirmed)
+The ruler is a character the player plays, not a cursor over a realm.
+- **The ruler's sheet.** Five skills, the same domains the offices use (force, wealth, sway, intrigue,
+  lore), traits and flaws, wounds, age. Skills grow from deeds done in person, not from points.
+- **A name earned.** Deeds leave marks ("the Cruel", "Oathbreaker", "the Open-Handed"): code adds a mark
+  when a kind of deed repeats, and a mark changes how people and factions meet the ruler (loyalty and
+  stance modifiers, new deck cards, lines in every prompt). This is the tyrant or the just king, grown
+  from play instead of chosen in a menu.
+- **Deeds in person.** Each turn the ruler has one or two personal deeds beside the orders: lead the
+  assault, go out in disguise, fight the duel, court someone, question the prisoner. A personal deed is a
+  played scene with a narrator, rolls on the ruler's own skill at uncertain moments, and personal risk:
+  a wound, capture, death. An order sent through an office is safe and uses the holder's skill instead.
+- **Scenes are episodes, not chats.** Code states the stake before the scene (what a full success, a
+  partial one and a failure change), the scene is played in prose, checks are 2d6 inside it, and the
+  closing call maps what happened to one of the stated outcomes. Kinds: audience, negotiation, intrigue,
+  expedition, duel, council.
+- **The inner circle.** Three to five companions with their own arc: a personal quest each (the Roleplay
+  quests shape: steps, main or side), a bond with the ruler that opens or closes by what the ruler does,
+  romance, and betrayal when loyalty and ambition cross. Courtiers beyond the circle stay lighter.
+- **The ruler's own thread.** An origin, a nemesis, a secret that can come out, written at creation.
+- **Relics, not an inventory.** A few named things (a crown, a sword, a seal) with an effect and a story.
+- **The mix moves with the ladder.** At the bottom rank there is almost no realm: a handful of people, a
+  purse, and the game is mostly scenes and personal deeds. Each rank adds offices, holdings and factions,
+  and personal deeds become rarer and weightier. So the start is an RPG with a band, the top is strategy
+  with RPG moments, and one schema serves both.
+
+## Losing (owner, 2026-11-14: it exists, and it is hard)
+- The ruler can die (wounds, a lost duel, an assassin, an execution after a lost war) and can be deposed
+  (sway at zero, a coup by an office holder, a front whose clock filled).
+- No undo of a finished turn. Inside a turn the player may take orders back until Dusk; Dusk is final. A
+  scene cannot be re-rolled (seeded dice, no swipe to a better result).
+- After the fall the world stays: the chronicle closes the reign with an epitaph, and the player may go
+  on in the same world as an heir or a companion if one lives, or as a new person years later, with what
+  the last ruler left behind. Several worlds can exist side by side, like chats.
+
+## Prose (owner, 2026-11-14)
+Medium length by default, and most of it goes to describing events (the report and the chronicle), less
+to lists and numbers.
 
 ## What is reused, and from where
 | Need | Taken from | How |
@@ -109,7 +148,7 @@ Later: map as a graph of regions, armies and campaigns, intrigue on "who knows w
   entry; nothing of that game (names, setting, rules) is used.
 
 ## Open questions for the owner
-- The public name.
-- One ruler per save and several saves side by side (assumed), or one world with several rulers?
-- Does losing exist (deposed, killed), or only setbacks?
-- Prose length per turn: one setting (short, medium, rich)?
+- The public name: later, something Ukrainian (owner, 2026-11-14).
+- The RPG side above: confirm or change (start at the bottom rank by default? one or two personal deeds a
+  turn? going on as an heir after a death?).
+- Answered 2026-11-14: losing exists and is hard; prose is medium and mostly about events.
