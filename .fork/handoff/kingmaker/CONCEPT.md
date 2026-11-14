@@ -94,6 +94,18 @@ The ruler is a character the player plays, not a cursor over a realm.
   on in the same world as an heir or a companion if one lives, or as a new person years later, with what
   the last ruler left behind. Several worlds can exist side by side, like chats.
 
+## The front: closer to an interactive story (owner, 2026-11-14; direction only, not designed yet)
+The owner wants more of the visual side: pictures, portraits, a front that reads like an interactive
+story rather than a management screen. The rules stay as they are; this is about the screens.
+Proposed (Claude, to confirm with a new mock): the Throne becomes a stage: a picture of the place behind
+the prose, the person who brings a matter shown with a portrait, scenes played as in a visual novel (the
+speaker's portrait, expressions later), a fall and a rise as full-screen plates. Sources of pictures,
+cheapest first: a crest and a letter portrait drawn by code (always there, no model), the portrait of an
+imported Roleplay card, pictures drawn by the engine's picture model when the user has one (Roleplay's
+portraits, sprites and backgrounds and Social's picture worker are the parts to reuse; handbook
+`roleplay-pictures-sprites.md`, `social-profiles-import.md`). Free text-only models must still give a
+screen that looks designed, so nothing may depend on a drawn picture.
+
 ## Prose (owner, 2026-11-14)
 Medium length by default, and most of it goes to describing events (the report and the chronicle), less
 to lists and numbers.

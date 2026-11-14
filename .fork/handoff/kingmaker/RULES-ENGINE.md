@@ -4,10 +4,10 @@ What exists: the rules of a reign as code, with tests and a balance simulator. N
 no routes, no screens yet.
 
 ## Where the code is
-A local git repository on the machine of this session, inside the engine folder: `data/dev/kingmaker/`
-(`data/` is gitignored in the engine repository). One commit, not pushed anywhere: the addon has no GitHub
-repository yet (`MolfarWav/Molfar.Vertep-Kingmaker` is the planned name; creating it waits for the owner).
-Until then the code exists on one machine only.
+Repository `MolfarWav/Molfar.Vertep-Kingmaker`, PRIVATE on the owner's word (2026-11-14: nobody should
+pull it before it plays properly), branch `main`. The working copy of that session is
+`data/dev/kingmaker/` inside the engine folder (`data/` is gitignored in the engine repository); on
+another machine clone it anywhere.
 
 - `plugins/realm/plugin.js`: an ES module without imports (the plugin sandbox's rule); pure functions of
   the state and a seed. `RULES` at the top holds every balance number.
