@@ -55,3 +55,42 @@ Colours are the shell's tokens (`client/src/styles/tokens.css`): `cta` for the o
 ## Phone
 Bottom tabs (5), the primary button above them, targets 44 px, no hover-only controls, the ruler's sheet
 moves to the Court tab, Ukrainian strings checked at 390 px.
+
+## Second pass: the front as an interactive story (2026-11-14, mock `mock2.html`)
+The owner asked for a more visual front: portraits, pictures, closer to an interactive story. The first
+layout (the chronicle column) is replaced for the Throne, the scene, Dusk and the fall; the rules and the
+list of screens stay.
+
+### Variants for the Throne
+- **A. The stage (picked).** A picture of the place on top, the person who brings the matter standing in
+  it with a portrait, their words in a dialogue box under it, the options as story choices. One matter at
+  a time; a strip of portraits shows all matters of the turn, which are answered, and jumps to any of
+  them, so the one-at-a-time flow costs no blind step. The report opens the turn on the same stage.
+- B. Stage on the left, the list of matters on the right. Keeps the overview, loses the story.
+- C. One card and two answers, swiped. Too thin for three or four options, an order in words, a scene
+  and a deed in person.
+
+### What changes
+- **Throne:** beats on one stage: the report, then each matter (place picture, bringer's portrait, their
+  line in first person, a narrator line, choices with price and roll), then "Your orders" with every
+  answer and the one primary button. Resources sit over the picture's top edge.
+- **Scene:** a visual novel: the place, the other person's portrait, a name plate, their words; the
+  player answers by picking an approach (each names the skill it rolls and its risk) or writes a line.
+  The roll is shown as two dice and the band in words. The stake box stays on top.
+- **Dusk, the fall:** full-width plates: a picture, a title, prose; results carry the portrait of whoever
+  the matter was about.
+- **Court:** a gallery of portraits; the ruler's sheet opens with the ruler's portrait.
+- **Factions:** each front has a crest.
+
+### Pictures, cheapest first (nothing may depend on a drawn one)
+1. Drawn by code, always there: a paper-cut portrait from a few parameters (field, hair, garment), a crest
+   from two colours and a charge, a place from layered shapes. The mock shows only this tier.
+2. The portrait of an imported Roleplay card.
+3. A picture drawn by the engine's picture model, when the user has one; it replaces the code drawing in
+   the same frame, so the layout does not change.
+Text never sits on a picture without a scrim; pictures keep their own dark palette in both themes.
+
+### States added
+A person without any picture (tier 1 drawing), a place without a picture (tier 1), a picture still being
+drawn (the tier 1 drawing stays until the new one is ready, no spinner over the stage), phone (picture
+16:9 on top, the portrait overlaps its lower edge, choices under the thumb).
