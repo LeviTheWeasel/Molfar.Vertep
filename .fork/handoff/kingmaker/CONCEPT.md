@@ -59,7 +59,7 @@ Code knows only these; the world gives them names.
 Two or three model calls a turn plus scenes; each returns small JSON. A finished turn is not undone (see
 Losing); a snapshot per turn is still kept, for repair after a crash, not for the player.
 
-## The RPG side (draft 2, proposed 2026-11-14 after the owner's "this reads as pure strategy"; not yet confirmed)
+## The RPG side (draft 2, 2026-11-14, after the owner's "this reads as pure strategy"; confirmed by the owner the same day, together with the world living on after a fall)
 The ruler is a character the player plays, not a cursor over a realm.
 - **The ruler's sheet.** Five skills, the same domains the offices use (force, wealth, sway, intrigue,
   lore), traits and flaws, wounds, age. Skills grow from deeds done in person, not from points.
