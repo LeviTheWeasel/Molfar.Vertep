@@ -1,5 +1,5 @@
 # Dashboard: the sensor pass, relations, the character journal, the clock
-Verified at: molfar.vertep-roleplay 91eec33
+Verified at: molfar.vertep-roleplay 1f0a99f
 
 ## What it does
 - After a reply, a sensor model call reads the new messages and returns one JSON report: present people, clock, scene, events, each character's mood, condition, outfit, holding and goal, what each learned, what was said or promised, threads (quests), journal lines and edges between people.
@@ -21,6 +21,8 @@ Verified at: molfar.vertep-roleplay 91eec33
 - `plugins/relations/plugin.js` `commitUpdate`: a non-JSON reply records `lastError` and keeps the old state; otherwise it applies the report.
 - `plugins/relations/plugin.js` `applySensor`: writes the snapshot, runs the apply functions, keeps the newest `SNAPSHOT_LIMIT` (40).
 - `plugins/relations/plugin.js` `charEntry`: one character's stats, mood, condition, outfit and holding ledger, and thought.
+- `plugins/relations/plugin.js` `previousStateText`: the sensor's Previous state; item ids for present characters and for up to `AWAY_LISTED` (3) characters out of the scene.
+- `plugins/relations/plugin.js` `applyLedger`: applies `see` and `off` to the worn and held items; `goneWhere` turns a "left behind" text on a listed id into an `off`, `sameKindOfGarment` joins an id-less garment to the one listed item of its kind.
 - `plugins/relations/plugin.js` `applyNotebook`: what each character saw, heard or guessed.
 - `plugins/relations/plugin.js` `applySaid`: vows, promises, threats and similar lines, limited per turn.
 - `plugins/relations/plugin.js` `applyThreads`: quests (main, side, everyday) and their steps.
@@ -77,6 +79,9 @@ Verified at: molfar.vertep-roleplay 91eec33
 
 ## Traps
 - A non-JSON answer is not retried. Only a rate-limit error is.
+- A character missing from `present` for one turn used to lose their `Wearing:` ids in the next sensor input, and came back with duplicate garments (#409). The ids of absent characters are listed now; do not cut that line to save tokens.
+- The guards in `applyLedger` (`goneWhere`, `speaksOf`, `sameKindOfGarment`) read English item texts only. An item text in another language passes through as before.
+- An item that is not in `see` stays for ever, and a removal no sentence describes is never reported (#410).
 - A snapshot without `sig` is never read again.
 - The sensor sees the previous people lines but never the previous thought.
 - A clock time the report does not state is marked approximate. The day count only moves forward.
@@ -89,6 +94,7 @@ Verified at: molfar.vertep-roleplay 91eec33
 - `test/rp-dash-clock.test.ts`: `advanceClock` and the scene line of the insert.
 - `test/rp-dash-journal.test.ts`: `OUTPUT_SHAPE`, `llmRequest`, `journalBlock`.
 - `test/rp-insert-ceiling.test.ts`: `insertCeiling` rows.
+- `test/rp-dash-things.test.ts`: item ids in the Previous state, `applyLedger` ("clothes do not pile up").
 ## Not verified
 - The 10 second plugin limit. `docs/COUPLINGS.md` cites a 10 second sandbox cap and a 20 second `CALL_TIMEOUT_MS`, but that constant is in the engine repo. No route-level limit was found here.
 - The engine's reserve and fallback table for `insertCeiling`.
