@@ -1,5 +1,5 @@
 # World DM: the plugin that builds a world from the story and moves it during play
-Verified at: molfar.vertep-roleplay 91eec33
+Verified at: molfar.vertep-roleplay e09c2ed (sections: Traps); the rest at 91eec33
 
 ## What it does
 - After a reply, a DM model reads the new part of the story and returns small JSON. Code turns it into the chat's world book: one record per person, place, group, thing or fact that matters beyond the scene.
@@ -83,7 +83,7 @@ The DM's system prompt is never sent with the reply. Records reach the reply thr
 - Deck size: `DECK_MIN`, `DECK_MAX`, `cleanDeck`, `DECK_SYSTEM`.
 
 ## Traps
-- `DECK_MIN` (8) appears only in the deck prompt text. `deckRoute` keeps whatever the model returns.
+- `DECK_MIN` (8) is a request in the deck prompt, not a limit: `deckRoute` keeps whatever the model returns (even one card) and only flags `short: true`, which the client shows as a warning. No retry.
 - The roll_dice tool in `plugins/tools/plugin.js` uses Math.random and is not logged by World. World's dice are seeded per chat, message and swipe.
 - `llmRequest` marks the event sent before the reply exists. A reply that never lands is caught later by `eventLost`.
 - In code mode the model's tick ops are dropped silently.

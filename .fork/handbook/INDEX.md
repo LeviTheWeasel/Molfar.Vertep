@@ -58,6 +58,9 @@ Traps; Tests that guard it; Not verified.
   "Verified at" line.
 
 ## Found while writing (handed to an executor as `TASK-handbook-findings.md`, 2026-11-11)
+Status 2026-11-14 (issue #388): everything in the first list is fixed (Roleplay PR 126, Social PR 49); in the second list the
+CHANGELOG, `RELEASE.md` and DATA-FORMATS lines are fixed (engine PR 380), and `insertCeiling` is #387. Two questions stay open in #388
+(a retry button for a short deck, Social tests of its own).
 - `docs/ENTITY-REGISTRY.md` says in one place that World `holder` and `inside` become ids and in
   another that `holder` is a display name; the code stores names. The doc needs one answer.
 - `DECK_MIN` is only written into the deck prompt; `deckRoute` does not enforce it.

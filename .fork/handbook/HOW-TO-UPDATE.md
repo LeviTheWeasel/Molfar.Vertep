@@ -14,7 +14,8 @@ of "done", like tests and lint.
 3. Set the page's "Verified at" line to your commit. If you changed only part of the page, write
    it so: `Verified at: <repo> <new hash> (sections: Flow, Traps); the rest at <old hash>`.
 4. Rebuild the collected pages if Traps or "If you change X" changed: the three `cross-*.md`
-   files are made from the pages, never edited by hand.
+   files are made from the pages, never edited by hand: `node .fork/tools/build-handbook-cross.mjs .fork/handbook`
+   (`--check` writes nothing and fails when they are stale).
 5. Run the full check: `node .fork/tools/check-handbook.mjs .fork/handbook engine=<path>
    roleplay=<path> social=<path>`. It must report 0 missing. A repo you do not have may be left
    out; its lines are counted as skipped.

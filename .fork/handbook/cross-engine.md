@@ -80,7 +80,7 @@ Change X, touch Y:
 Traps:
 - Clocks apply per pass. A route with three model rounds makes three worker calls, and `runPluginRoute` sets no overall limit.
 - Store writes from a failed pass still apply: `applyStoreWrites` runs before the `!r.ok` check. Files written before a crash stay on disk, and a 500 queues no commit.
-- `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. No test covers an imported `insertCeiling`.
+- `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. Confirmed on `main` at 8310b23: a test in `test/plugins.test.ts` (`it.failing`, branch `claude/handbook-findings`, d8ef627) pins it. The official Roleplay plugins say `origin: "local"` in their manifests, so they are not affected; only an imported plugin that declares `hooks` is. The `llmRequest` loop gates on a declared `hooks` plus a granted `llm`; the proposed fix is the same gate here. Not changed: security code, waiting for review.
 - A manifest without `origin` is trusted: `hasCapAny` asks for grants only when origin is `imported`.
 - `PluginPermission` lists `fs:${string}`, but `hasCapAny` matches only the exact name `fs`.
 
@@ -142,8 +142,8 @@ Change X, touch Y:
 - Tag format: the `v*` filter in `release.yml`, `MV_TARGET` in `Molfar-Vertep.bat`, `.fork/RELEASE.md`.
 
 Traps:
-- The launcher picks only tags starting with `v` (`MV_TARGET` runs `git tag -l "v*"`). `.fork/RELEASE.md` says both forms work, but `0.1.0` would not be picked by default.
-- CHANGELOG.md has no `## Unreleased` heading at 8310b23, so release step 5 has nothing to rename.
+- The launcher picks only tags of the form `vX.Y.Z` (`MV_TARGET` runs `git tag -l "v*"`); `0.1.0` is never picked. The in-app update check drops a leading `v`, so it reads both. `.fork/RELEASE.md` says so since d8ef627 (branch `claude/handbook-findings`).
+- CHANGELOG.md had no `## Unreleased` heading at 8310b23; d8ef627 adds an empty one. Keep it after each release (step 4).
 - Staging copies follow `staging-latest`. Its title must read `Staging <version>`.
 - A tag that does not match `package.json`, or is not on main, fails `release.yml`.
 - An app's `engine` range is the app contract, not the engine version. Do not bump `APP_API_VERSION` for an ordinary release.

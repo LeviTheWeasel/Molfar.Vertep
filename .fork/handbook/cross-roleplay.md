@@ -21,7 +21,7 @@ Traps:
 - A clock time the report does not state is marked approximate. The day count only moves forward.
 - A new insert part without a row in `insertCeiling` overflows the window silently.
 - A user journal line always wins over a sensor line. No route writes user lines yet.
-- `docs/JOURNAL-HANDOFF.md` is cited in the comment above `journalPreviousLines`, but the file is not in `docs/`.
+- The comment above `journalPreviousLines` and `test/rp-dash-journal.test.ts` cited `docs/JOURNAL-HANDOFF.md`, a handoff file deleted in the commit that built the journal (03978ad). Both now point at `docs/DATA-FORMATS.md`, "The character journal" (Roleplay branch `claude/handbook-findings`, 0185b00).
 
 
 ## From `roleplay-entity-registry.md`
@@ -35,7 +35,7 @@ Change X, touch Y:
 - Voice colours: `voicesRoute`, `pickVoiceColors` and `src/lib/chat-voices.ts`.
 
 Traps:
-- docs/ENTITY-REGISTRY.md says World `holder` and `inside` become ids in phase B. The code still stores display names (`canonSpace` in plugins/world/plugin.js, via `regCanon` and `canonPlaceName`). Do not assume an id.
+- World `holder` and `inside` are names on purpose; ids for them are planned, not built. `docs/ENTITY-REGISTRY.md` says so in "Holder, inside and place: names on purpose" (Roleplay branch `claude/handbook-findings`, 0185b00). A reader that needs the id of a thing or place uses the record's link (`state.regIds`) or the Dashboard's items. Do not assume an id in those fields.
 - There are two transliteration functions: `regTranslit` (registry) and `xsTranslit` (lorebook). They must agree on the same words. A test checks behaviour, not the two functions directly.
 - The sync script copies the source into relations, world and litopys only. The engine and agents plugins have no copy of `resolveName`.
 - `resolveName` can return `{ ambiguous }` with no `id`. Check `r.id` before use. Callers check `r.step > 1` before `regLearn`.
@@ -278,7 +278,7 @@ Change X, touch Y:
 - Deck size: `DECK_MIN`, `DECK_MAX`, `cleanDeck`, `DECK_SYSTEM`.
 
 Traps:
-- `DECK_MIN` (8) appears only in the deck prompt text. `deckRoute` keeps whatever the model returns.
+- `DECK_MIN` (8) is a request in the deck prompt, not a limit: `deckRoute` keeps whatever the model returns (even one card) and only flags `short: true`, which the client shows as a warning. No retry.
 - The roll_dice tool in `plugins/tools/plugin.js` uses Math.random and is not logged by World. World's dice are seeded per chat, message and swipe.
 - `llmRequest` marks the event sent before the reply exists. A reply that never lands is caught later by `eventLost`.
 - In code mode the model's tick ops are dropped silently.
