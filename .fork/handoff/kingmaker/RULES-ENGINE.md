@@ -139,3 +139,51 @@ Still no screens. A reign can now be played and read end to end through routes.
 - **Not built:** personal quests of the inner circle, relics, a scene's memory of earlier scenes with the
   same person (Social's note fold), diaries kept per person over turns (only the turn's line exists),
   import, any screen.
+
+## Step 4: the prompts against real models (2026-11-15)
+Addon commit `87f55fd`. `scripts/live-run.ts` builds a world from one Ukrainian direction and plays one
+turn with a scene through the three plugins' routes, a real model answering every prompt (10 calls). The
+models are reached through the `ask-model` script; per the repo's rule they are described here, not named
+(the owner has the names in the session's reply). All text in Ukrainian.
+
+| Model | World (5 steps) | Report | Scene | Chronicle | Time for 10 calls |
+| --- | --- | --- | --- | --- | --- |
+| A cheap fast model, the owner's usual test | all usable first time | every matter and option worded | open, talk, close worded | 2 or 3 of 3 outcomes worded, rumours, diary | about 80 s |
+| An open 12B model | all usable first time | all worded | all worded | all worded | about 250 s |
+| An older 12B model | one step needed a second try | all worded | all worded | all worded; wrong words, stray Latin tokens, the ruler's title wrong | about 245 s |
+| Two models that think before they answer (one free) | most steps came back empty: the room for the answer was spent on thinking | plain fallback | partly worded | plain fallback | 4 to 9 minutes |
+| Two free models from the skill's list | no longer offered (404) | plain fallback | plain fallback | plain fallback | seconds |
+
+Every failure fell back to plain words and the turn went on: the fallback path is now proven on real
+failures, not only on a fake host.
+
+**What the first run showed and what was changed**
+- A bringer promised things the option does not give ("an estate and a coat of arms" for an offer that
+  pays a wage). The report prompt now lists what each option really does (its price and its effects in
+  words) and tells the model that nobody offers anything beyond that.
+- The chronicle retold a scene another way (another room, another ending). It now gets the place and the
+  last lines of a closed scene and is told the outcome must match.
+- The chronicle invented what factions did ("recalled its officer"). The stirred-front fact now says the
+  front came closer to its goal and that how is not known; the prompt forbids invented deeds of factions.
+- A diary confessed a new betrayal. The diary is now "what they saw and think; they did nothing new".
+- Game terms in speech ("ten thalers for four turns"). Effects are worded in the world's time unit, and
+  scenes forbid game terms. After the fix none of three models leaked a number or "turn" into prose.
+- A secret matter was told about a courtier instead of the ruler. The matter's facts now carry the
+  ruler's secret from the world's build.
+- Answers with the last brace missing, or cut off mid-list: `looseJson` closes what was open and keeps
+  every finished item.
+- Models that think first returned nothing within 900 to 1400 tokens. Limits are now 2000 to 5000 and
+  requests ask for light reasoning (`reasoning: "low"`). The harness cannot pass that setting, so whether
+  it is enough for such models is NOT verified; in the harness they still ran out of room.
+- A title came back in English from the weakest model: the language is now also stated as the last line
+  of every prompt.
+
+**Still true**
+- The plain fallback is English; in a Ukrainian game a missed outcome shows an English line of facts.
+- Small old models write poor Ukrainian; prompts cannot fix that. The 12B open model was acceptable.
+- Mild inventions remain in colour (a letter nobody read, a diary's private plan); none changed a number.
+- The largest prompt was about 4500 characters; nothing here needs a big window.
+- Not measured: cost per turn in money; the same run in English; more than one turn (a later turn has
+  more history in the state, but prompts do not grow with it).
+- The skill's `free` chain names two models that no longer exist; fixed in the repo copy of
+  `providers.json` (the desktop's personal copy needs the same change).
