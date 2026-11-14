@@ -99,3 +99,43 @@ Addon commit `2e908fe`. Still no screens and no prose of a turn.
 ## The owner on the second mock (2026-11-14)
 "Frankly weak, but it will do for a start." The front needs a real design pass later (the code-drawn
 pictures and the layout did not convince); it is not the base to polish.
+
+## Step 3: the words of a turn, and scenes (2026-11-15)
+Still no screens. A reign can now be played and read end to end through routes.
+
+- **`plugins/court/plugin.js`** (permissions routes, fs, llm). It decides nothing: it reads the realm
+  plugin's state and turn records and asks a model to word them. The system prompt says the rules have
+  already decided and forbids any outcome beyond the facts given. Every call has plain words in code
+  (English), used when the model fails or the caller sends `{ plain: true }`; `{ again: true }` rewrites.
+  - `POST /court/<save>/report`: one call after dawn. Returns the report of the turn and, per matter,
+    the bringer's words in first person, a narrator line and each option in the world's words. Who brings
+    a matter is picked by code (`bringerOf`: the treasurer for an empty chest, the spymaster or the most
+    loyal person for a courtier who cannot be trusted, an envoy for a faction's offer), so the portrait
+    and the voice never depend on a model. A seed of the same kind from the world's build is offered to
+    the model. An answer that words only some ids keeps the plain words for the rest. Written once per
+    turn to `saves/<id>/prose/<reign>-<turn>.json`.
+  - `POST /court/<save>/chronicle`: one call after dusk, from the turn's record. The model is given, per
+    matter, what it was, the ruler's answer in the label the player saw, how it was done, the band in
+    words and what changed (`effectWords`, in the world's names for its resources), then the turn's
+    facts. It returns a title, an outcome per matter, the chronicle, three rumours, a diary line of one
+    courtier (picked by code, in turn) and an epitaph when the reign ended.
+  - Scenes: `POST /court/<save>/scene { matter, opt, mode }` opens one on an option that may be played
+    face to face or in person: the place, what is seen, the other side's first words, the stake in words,
+    and three approaches, each its own skill (`approachesOf`: the option's own first). `.../talk { text }`
+    is free talk, at most four exchanges, and settles nothing. The roll is the rules':
+    `POST /realm/saves/<id>/act { matter, opt, mode, domain }`. `.../close` then words the ending to the
+    band and the effects; closing before the roll is refused.
+- **Realm plugin changes:** a result now lists the effects that were applied; `actOne` and the `act` route
+  settle one matter at once (it leaves the turn's list, its result joins the record at dusk, it cannot be
+  rolled twice); a scene may name another skill than the option's own, one harder; deeds in person are
+  counted across the turn (`deedsLeft` in the view).
+- **Calls of a turn:** report 1, chronicle 1, plus per scene 2 and one per exchange of talk.
+- **Checked:** 47 tests; the whole flow (build, reign, report, scene with talk, act, close, dusk,
+  chronicle) through the engine's real plugin runtime with a fake model; the balance simulation gives the
+  same numbers as before. A test caught one real fault: options the model left unworded lost their plain
+  label (fixed).
+- **Not checked:** any real model: whether a small model keeps to the facts, returns every id, writes
+  good prose in Ukrainian. Prompt sizes not measured. The plain fallback is English only.
+- **Not built:** personal quests of the inner circle, relics, a scene's memory of earlier scenes with the
+  same person (Social's note fold), diaries kept per person over turns (only the turn's line exists),
+  import, any screen.
