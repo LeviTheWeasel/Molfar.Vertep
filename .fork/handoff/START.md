@@ -11,7 +11,7 @@ The queue is GitHub: `gh issue list --state open --label enhancement` and `--lab
 written here. Bugs are fixed in the Tuesday batch (CLAUDE.md, "Bugs"). Where the next work stands (2026-11-14):
 
 - **Roleplay, the owner's current line:** group dynamics (#404, #405: member voices, check on real free models, tune the wording),
-  the Dashboard clock (#406: released, waits for a live session), the turn director (#401: design is in STATE, no code yet),
+  the turn director (#401: design is in STATE, no code yet),
   Agent forge follow-ups (#396 items left, #402, #403), the persona frame on a real model (#398), the lorebook budget question (#397).
 - **Bugs open:** #407 (browser-check fixture does not compile against Roleplay), #394 (relations: the full review of the event
   table by relationship stage), #390 (Updates dialog on a phone, cause unknown: needs the phone's engine log),
