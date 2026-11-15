@@ -288,7 +288,9 @@ try { Object.defineProperty(globalThis, 'fetch', { value: undefined, writable: f
         for (const name of names) {
           const data = files[name];
           const isText = /\.(json|jsonl|txt|md|js|css|html|yml|yaml|csv)$/i.test(name) || name === "settings.json";
-          if (isText && data.length < 2 * 1024 * 1024) {
+          // text up to 16 MB comes as a string: a long chat transcript is a text file of several MB, and as
+          // a binary it was skipped by the importers without a word
+          if (isText && data.length <= 16 * 1024 * 1024) {
             out[name] = utf8.decode(data);
           } else if (data.length <= 16 * 1024 * 1024) {
             // binaries ride as base64 (16MB/entry) — importers need embedded

@@ -125,6 +125,27 @@ describe("plugin sandbox execution", () => {
     expect(next?.json).toEqual({ recovered: true });
   }, { timeout: 30_000 });
 
+  it("a backup zip rides once: the route body of every plugin has no zipBase64, the zip plugin still reads it", async () => {
+    const { zipSync, strToU8 } = await import("fflate");
+    writePlugin("plain", { name: "P", version: "1", permissions: ["routes"], origin: "local" },
+      `export function handleRoute(req) { return { status: 200, json: { bodyKeys: Object.keys(req.body ?? {}), other: req.body?.other ?? null } }; }`);
+    writePlugin("zipper", { name: "Z", version: "1", permissions: ["routes", "zip"], origin: "local" },
+      `export function handleRoute(req, host) { return { status: 200, json: { names: Object.keys(host.zip.entries()), bodyKeys: Object.keys(req.body ?? {}) } }; }`);
+    const zipBase64 = Buffer.from(zipSync({ "a.json": strToU8("{}") })).toString("base64");
+    const found = discoverPlugins(path.join(dir, "plugins"));
+    const req = { method: "POST", path: "/import/zip", query: {}, body: { zipBase64, other: "kept" }, zipBase64 };
+    const plain = await runPluginRoute(found.find((p) => p.id === "plain") as LoadedPlugin, req, deps());
+    expect(plain?.json).toEqual({ bodyKeys: ["other"], other: "kept" });
+    const zipper = await runPluginRoute(found.find((p) => p.id === "zipper") as LoadedPlugin, req, deps(["zip"]));
+    expect(zipper?.json).toEqual({ names: ["a.json"], bodyKeys: ["other"] });
+    // the caller's own object is untouched, and other bodies pass as they are
+    expect(req.body.zipBase64).toBe(zipBase64);
+    const { bodyWithoutZip } = await import("../src/plugins/runtime.js");
+    expect(bodyWithoutZip(null)).toBeNull();
+    expect(bodyWithoutZip([1])).toEqual([1]);
+    expect(bodyWithoutZip({ a: 1 })).toEqual({ a: 1 });
+  }, { timeout: 30_000 });
+
   it("a call that runs out of memory fails alone, and the pool keeps serving", async () => {
     const { sandbox } = await import("../src/plugins/sandbox.js");
     const hog = `export function uiPanel() { return new Array(200000000).fill(1).length; }`;
