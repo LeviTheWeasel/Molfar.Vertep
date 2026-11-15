@@ -7,6 +7,8 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+- **A big backup zip imports again (Roleplay Import, Backup zip).** The zip travels inside the request body, and every route plugin of the app is asked in turn, so each one received a copy of the whole archive in its sandbox call. A library of about 70 MB (a SillyTavern data folder) timed out after 20 s in the first plugin that never reads it, and the import ended with "sandbox call timed out" after the progress bar reached 100%. The engine now takes the archive out of the body it hands to plugins; only a plugin with the `zip` permission gets it, through `host.zip`.
+
 ## 1.16.4 (2026-11-12)
 
 - **Plugins get embeddings lined up with the texts they asked for.** The engine does not embed blank text, so its list could be shorter than the plugin's; a plugin that paired `texts[i]` with `vectors[i]` got shifted pairs after the first blank one. `host.llm.embedResults[key]` now has one entry per text, `null` where the text was blank (Roleplay's lorebook embed pass was the one caller that could hit it).

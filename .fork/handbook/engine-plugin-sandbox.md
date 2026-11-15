@@ -1,5 +1,5 @@
 # App plugins: the sandbox, the host API, hooks and limits
-Verified at: molfar.vertep 8310b23
+Verified at: molfar.vertep 1593219
 
 ## What it does
 An app plugin is `plugins/<id>/plugin.js` with a `manifest.json` beside it, inside an app folder. Each call evaluates the current source in a QuickJS runtime owned by a pooled worker thread. The plugin asks for models and the network through `host`, and the engine does that work between passes. A call that fails or overruns ends its worker. Manifest permissions gate each capability.
@@ -58,6 +58,7 @@ Every call gets `host` from `src/plugins/sandbox-worker.mjs`. Permission in brac
 - `POOL_SIZE`: 2 to 4 workers by default; `MOLFAR_VERTEP_SANDBOX_WORKERS` up to 8. `src/plugins/sandbox.ts`
 - `IDLE_RETIRE_MS` = 5 min, `SETTLE_LIMIT_MS` = 10 s, `HEAP_RETIRE_BYTES` = 192 MB. `src/plugins/sandbox.ts`
 - Zip restore route: `zipLimits` 120 s and 512 MB; 200 MB payload; 60000 entries; 256 MB total (`MAX_TOTAL`). `src/plugins/runtime.ts`, `src/plugins/sandbox-worker.mjs`
+- A route body that carries `zipBase64` is cut down by `bodyWithoutZip` before every plugin gets it: the archive reaches only a plugin with the `zip` permission, through `host.zip`. Without it each route plugin of the app copied the whole string into its guest, and a 70 MB library timed out (20 s) in the first plugin, before the importer ran. `src/plugins/runtime.ts`
 - Net: `NET_DEFAULT_TIMEOUT_MS` 15 s, `NET_MAX_TIMEOUT_MS` 60 s, `NET_DEFAULT_MAX_BYTES` 5 MB, `NET_HARD_MAX_BYTES` 20 MB. `src/plugins/runtime.ts`
 - `MIN_INTERVAL_MS` = 5 s for timers; `MAX_TOOL_PASSES` = 3. `src/plugins/runtime.ts`
 - Manifest `limits`: `PASSES_DEFAULT` 3, `PASSES_MAX` 12, `CONCURRENCY_MAX` 4; `DEFAULT_PACE` 250 ms gap, 3 retries. `src/plugins/llm-pace.ts`

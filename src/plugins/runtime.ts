@@ -919,6 +919,15 @@ async function runPassRequests(
   return results;
 }
 
+/** A route body without its `zipBase64` string; any other body comes back as it is. */
+export function bodyWithoutZip(body: unknown): unknown {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  if (typeof (body as { zipBase64?: unknown }).zipBase64 !== "string") return body;
+  const rest = { ...(body as Record<string, unknown>) };
+  delete rest.zipBase64;
+  return rest;
+}
+
 export async function runPluginRoute(
   plugin: LoadedPlugin,
   req: PluginRouteRequest,
@@ -943,6 +952,12 @@ export async function runPluginRoute(
   // other plugin, and is disposed the moment the import is done.
   const zipBox = zipOk ? new PluginSandbox() : null;
   const box = zipBox ?? sandbox;
+  // The archive also sits inside the request body (`{ zipBase64 }`), and every route plugin of the app
+  // is asked in turn. Copying a library-sized string into each one's guest took longer than the shared
+  // sandbox's 20 s for a 70 MB backup, and the import failed in the first plugin that never reads it
+  // (the Roleplay Agents plugin) before the importer was even asked. The archive travels once, as
+  // `zipBase64`, to the plugins that hold the "zip" permission.
+  const ctxBody = bodyWithoutZip(req.body);
   // a read route of a trusted plugin may ask for more than the default 10 s (a slow phone, a big library: #391)
   const readMs = plugin.manifest.origin === "local" && (req.method === "GET" || req.method === "HEAD") ? readLimits(plugin.manifest.limits).executionMs : 0;
   const zipLimits = zipOk ? { executionTimeoutMs: 120_000, memoryLimitBytes: 512 * 1024 * 1024 } : readMs > 10_000 ? { executionTimeoutMs: readMs } : {};
@@ -978,7 +993,7 @@ export async function runPluginRoute(
         label: `${plugin.id} route ${req.method} ${req.path}`,
         // zipBase64 already rides the message for the host-side zip service —
         // keep the multi-MB string OUT of the guest's ctx (64MB heap)
-        ctx: { ...req, zipBase64: undefined, ...(stash ? { stash } : {}) } as unknown as Record<string, unknown>,
+        ctx: { ...req, zipBase64: undefined, body: ctxBody, ...(stash ? { stash } : {}) } as unknown as Record<string, unknown>,
         storeSnapshot: snap,
         storeAllowed: hasCapAny(plugin, "store", deps),
         llmAllowed: caps.llm,
