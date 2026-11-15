@@ -555,22 +555,22 @@ describe("installing from the store", () => {
     const url = await publish("studio", { name: "Studio", version: "1.0.0", kind: "app" });
     const id = await importApp(url);
     const p = userPaths(dataDir, "alice");
-    // a locally created app has no upstream: never checked
+    // a locally created app has no upstream: never checked, listed as having no source (#318)
     fs.mkdirSync(path.join(p.apps, "mine"), { recursive: true });
     fs.writeFileSync(path.join(p.apps, "mine", "manifest.json"), JSON.stringify({ name: "Mine", version: "1", kind: "app" }));
     const check = async () =>
-      ((await (await call("/v1/apps/updates?fresh=1")).json()) as { apps: { id: string; available: boolean; remoteHead?: string | null }[] }).apps;
+      ((await (await call("/v1/apps/updates?fresh=1")).json()) as { apps: { id: string; available: boolean; remoteHead?: string | null; noSource?: string }[] }).apps;
     // freshly installed: the stamped head is the remote's
-    expect(await check()).toEqual([{ id, available: false, remoteHead: expect.any(String) }]);
+    expect(await check()).toEqual([{ id, available: false, remoteHead: expect.any(String) }, { id: "mine", available: false, noSource: "local" }]);
     // an install with no stamped head (an adopted one) counts as behind
     const manifestPath = path.join(p.apps, id, "manifest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as { source: { head?: string } };
     delete manifest.source.head;
     fs.writeFileSync(manifestPath, JSON.stringify(manifest));
-    expect(await check()).toEqual([{ id, available: true, remoteHead: expect.any(String) }]);
+    expect(await check()).toEqual([{ id, available: true, remoteHead: expect.any(String) }, { id: "mine", available: false, noSource: "local" }]);
   }, 60_000);
 
-  it("lists an app installed from a file, so the Updates dialog can say it has no source", async () => {
+  it("lists an app with no update source, so the Updates dialog can say so", async () => {
     const p = userPaths(dataDir, "alice");
     const make = (id: string, manifest: Record<string, unknown>) => {
       fs.mkdirSync(path.join(p.apps, id), { recursive: true });
@@ -578,10 +578,27 @@ describe("installing from the store", () => {
     };
     make("from-zip", { repository: "https://example.com/owner/from-zip" });
     make("made-here", {});
-    const apps = ((await (await call("/v1/apps/updates?fresh=1")).json()) as { apps: { id: string; available: boolean; noSource?: boolean }[] }).apps;
-    expect(apps.find((a) => a.id === "from-zip")).toEqual({ id: "from-zip", available: false, noSource: true });
-    expect(apps.find((a) => a.id === "made-here")).toBeUndefined();
+    const apps = ((await (await call("/v1/apps/updates?fresh=1")).json()) as { apps: { id: string; available: boolean; noSource?: string }[] }).apps;
+    // one that names a repository came from a file; one with none was made here or copied in (#318)
+    expect(apps.find((a) => a.id === "from-zip")).toEqual({ id: "from-zip", available: false, noSource: "file" });
+    expect(apps.find((a) => a.id === "made-here")).toEqual({ id: "made-here", available: false, noSource: "local" });
   });
+
+  it("refuses to install an app whose engine range is outside the app contract, and leaves nothing behind (#318)", async () => {
+    const p = userPaths(dataDir, "alice");
+    // a release number written where the app contract belongs
+    const url = await publish("too-new", { name: "Too new", version: "1.0.0", kind: "app", engine: ">=1.12.0" });
+    const preview = await call("/v1/apps/import", { method: "POST", body: JSON.stringify({ gitUrl: url }) });
+    expect(preview.status).toBe(409);
+    expect(((await preview.json()) as { error: string }).error).toMatch(/app contract >=1\.12\.0.*supports v1\./);
+    const confirm = await call("/v1/apps/import", { method: "POST", body: JSON.stringify({ gitUrl: url, confirm: "too-new", head: "0".repeat(40) }) });
+    expect(confirm.status).toBe(409);
+    expect(fs.existsSync(path.join(p.apps, "too-new"))).toBe(false);
+    expect(fs.existsSync(path.join(p.apps, ".staging", "too-new"))).toBe(false);
+    // a range this engine satisfies still installs
+    const ok = await publish("fits", { name: "Fits", version: "1.0.0", kind: "app", engine: ">=1.0.0" });
+    expect(await importApp(ok)).toBe("fits");
+  }, 60_000);
 
   it("adopts an install an earlier engine shipped, and only that", async () => {
     const p = userPaths(dataDir, "alice");

@@ -4557,6 +4557,11 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
       fs.rmSync(dest, { recursive: true, force: true });
       return c.json({ error: "not a Molfar Vertep app (missing or invalid manifest.json)" }, 422);
     }
+    const unfit = contractProblem(staged.manifest);
+    if (unfit) {
+      fs.rmSync(dest, { recursive: true, force: true });
+      return c.json({ error: unfit }, 409);
+    }
     return c.json({
       staged: true,
       file: token,
@@ -4586,6 +4591,11 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
     if (!staged) {
       fs.rmSync(dest, { recursive: true, force: true });
       return c.json({ error: "not a Molfar Vertep app (missing or invalid manifest.json)" }, 422);
+    }
+    const unfit = contractProblem(staged.manifest);
+    if (unfit) {
+      fs.rmSync(dest, { recursive: true, force: true });
+      return c.json({ error: unfit }, 409);
     }
     const source = meta?.source && isValidGitUrl(meta.source.git) ? meta.source : null;
     const baselineDir = path.join(root, BACKUP_META_DIR, "baseline");
@@ -4677,6 +4687,11 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
         fs.writeFileSync(path.join(staging, ".staged-head"), head + "\n", "utf8");
         const staged = readStaged(staging);
         if (!staged) return c.json({ error: "not a Molfar Vertep app (missing or invalid manifest.json)" }, 422);
+        const unfit = contractProblem(staged.manifest);
+        if (unfit) {
+          await clearDir(staging).catch(() => undefined);
+          return c.json({ error: unfit }, 409);
+        }
         return c.json({
           staged: true, slug, head,
           manifest: { name: staged.manifest.name, version: staged.manifest.version, author: staged.manifest.author ?? null },
@@ -4730,6 +4745,12 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
       }
     }
 
+    const unfitStaged = contractProblem(staged.manifest);
+    if (unfitStaged) {
+      await clearDir(staging).catch(() => undefined);
+      return c.json({ error: unfitStaged }, 409);
+    }
+
     // another app (from elsewhere) already has this folder name: install beside it
     let id = slug;
     if (fs.existsSync(path.join(p.apps, id))) {
@@ -4769,6 +4790,16 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
     if (recorded) return recorded;
     const src = info.manifest.source;
     return src?.git ? { git: src.git, ref: src.ref ?? "HEAD" } : null;
+  };
+
+  /** An app whose `engine` range this engine's app contract cannot satisfy
+   *  cannot run here. It is said when the app is installed, not at its first
+   *  update (#318). An unreadable range counts as not satisfied, as in the
+   *  update route. */
+  const contractProblem = (manifest: { engine?: unknown }): string | null => {
+    const needs = typeof manifest.engine === "string" ? manifest.engine.trim() : "";
+    if (!needs || satisfiesRange(needs, APP_API_VERSION)) return null;
+    return `This app needs app contract ${needs}, and this engine supports v${APP_API_VERSION}. Update the engine first, or ask the app's author to fix its "engine" range: it names the app contract, not a Molfar Vertep release number.`;
   };
 
   const sameTree = (a: Map<string, Buffer>, b: Map<string, Buffer>): boolean => {
@@ -4843,16 +4874,18 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
   // Update check for the launcher: one ls-remote per app, in parallel, for
   // the badge on every row. Results are reused for a minute so reopening the
   // launcher does not repeat the round trips; `fresh=1` after an update.
-  const updateChecks = new Map<string, { at: number; signature: string; apps: { id: string; available: boolean; remoteHead?: string | null; error?: string; restored?: RestoredState; noSource?: true }[] }>();
+  const updateChecks = new Map<string, { at: number; signature: string; apps: { id: string; available: boolean; remoteHead?: string | null; error?: string; restored?: RestoredState; noSource?: "file" | "local" }[] }>();
   app.get("/v1/apps/updates", async (c) => {
     const u = c.get("user");
     const p = c.get("paths");
     const all = listApps(p.apps).map((app) => ({ app, source: installSourceOf(p, app) }));
     const entries = all.filter((e): e is { app: AppInfo; source: InstallSource } => e.source !== null);
-    // An app that names a repository but has no source was installed from a
-    // file or copied in: it is listed so the dialog can say why it has no
-    // update. An app with no repository at all (made here) is not.
-    const noSource = all.filter((e) => e.source === null && /^https?:\/\//.test(e.app.manifest.repository ?? "")).map((e) => ({ id: e.app.id, available: false, noSource: true as const }));
+    // An app with no update source is listed so the dialog can say so (#318):
+    // "file" for one that names a repository (installed from a file), "local"
+    // for one made here or copied in by hand.
+    const noSource = all
+      .filter((e) => e.source === null)
+      .map((e) => ({ id: e.app.id, available: false, noSource: (/^https?:\/\//.test(e.app.manifest.repository ?? "") ? "file" : "local") as "file" | "local" }));
     const signature = entries.map((e) => `${e.app.id}:${e.source.git}:${e.source.ref}:${e.app.manifest.source?.head ?? ""}:${e.source.restored ? "r" : ""}`).join("|") + "#" + noSource.map((n) => n.id).join(",");
     const cached = updateChecks.get(u.username);
     if (c.req.query("fresh") !== "1" && cached?.signature === signature && Date.now() - cached.at < 60_000) {
@@ -5554,6 +5587,8 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
     const rev = sourceRev(a.dir);
     const status = readBuildStatus(a.dir);
     const built = fs.existsSync(path.join(a.dir, "dist", "index.html"));
+    // a page on disk is not a good build: a development build with errors writes one too. A status from an older engine does not say, so it counts as built.
+    const goodBuild = built && status?.everClean !== false;
     const dev = status?.mode === "development" ? readDevMeta(a.dir) : null;
     // a dev dist whose snapshot/deps files are gone can never load; treat it
     // as unbuilt so a fresh full build replaces it instead of serving
@@ -5574,7 +5609,7 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
       else log.warn(`[apps] ${username}/${a.id}: missing packages did not install: ${r.log.split("\n").slice(-2).join(" ")}`);
     }));
     return c.json(
-      { rev, buildable, needsBuild, installing, status, dev },
+      { rev, buildable, needsBuild, installing, status, dev, built: goodBuild },
       200,
       { "cache-control": "no-store" },
     );
@@ -5748,7 +5783,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#111217}iframe{border:
   var bootmsg = document.getElementById("bootmsg");
   var loaded = false;
   var hide = function () { if (!loaded) { loaded = true; boot.style.display = "none"; } };
-  var fail = function () { bootmsg.textContent = "The build failed. This window shows the app's last good build."; };
+  var fail = function (never) { bootmsg.textContent = never ? "The first build of this app failed, so there is nothing to show yet." : "The build failed. This window shows the app's last good build."; };
   MolfarBridgeHost.serve(frame, appId, username, ${officialApp(c.get("paths"), app)});
   var load = function () { boot.style.display = "flex"; loaded = false; frame.src = MolfarBridgeHost.frameSrc(appId, username); };
   // the same signal the shell's app pane waits for, plus a load fallback
@@ -5763,7 +5798,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#111217}iframe{border:
     var w = MolfarBuilder.watch(appId, function (s) {
       if (s.phase === "building") bootmsg.textContent = "Building the app…";
       else if (s.phase === "waiting") bootmsg.textContent = s.message || "Waiting for the build…";
-      else if (s.phase === "error") fail();
+      else if (s.phase === "error") fail(s.built === false);
       else bootmsg.textContent = "Opening…";
     }, load);
     w.ready.then(function () { if (!frame.getAttribute("src")) load(); }, function () { fail(); if (!frame.getAttribute("src")) load(); });
@@ -6459,17 +6494,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:#111217}iframe{border:
     if (!release?.newer) return c.json({ release });
     // apps that say which engine they need and would not get it: named before
     // the update, not discovered after it
+    // Only the viewer's own apps, the ones the Updates dialog lists: a name
+    // from another account would have no row to go with it (#318). A release
+    // keeps the app contract this engine has (APP_API_VERSION) unless it
+    // raises it, which a new engine says only once installed, so these are
+    // the apps that already do not fit today.
     const incompatibleApps: { name: string; needs: string }[] = [];
-    for (const account of users.list()) {
-      for (const info of listApps(userPaths(dataDir, account.username).apps)) {
-        const needs = info.manifest.engine;
-        // a release keeps the app contract this engine has (APP_API_VERSION)
-        // unless it raises it, which a new engine says only once installed
-        if (!needs || satisfiesRange(needs, APP_API_VERSION)) continue;
-        if (!incompatibleApps.some((a) => a.name === info.manifest.name && a.needs === needs)) incompatibleApps.push({ name: info.manifest.name, needs });
-      }
+    for (const info of listApps(c.get("paths").apps)) {
+      const needs = info.manifest.engine;
+      if (!needs || satisfiesRange(needs, APP_API_VERSION)) continue;
+      if (!incompatibleApps.some((a) => a.name === info.manifest.name && a.needs === needs)) incompatibleApps.push({ name: info.manifest.name, needs });
     }
-    return c.json({ release: { ...release, incompatibleApps } });
+    return c.json({ release: { ...release, incompatibleApps, contract: APP_API_VERSION } });
   });
   app.get("/v1/admin/server/update", (c) => {
     try {

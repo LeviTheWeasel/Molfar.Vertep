@@ -105,7 +105,9 @@ function AppRow(props: {
   } else if (s.state === "current") {
     right = <span className={quiet}>{tr("Up to date.")}</span>
   } else if (s.state === "idle" || s.state === "checking") {
-    if (props.item.noSource) extra = <p className="text-11 leading-4 text-ink-muted">{tr("Installed from a file, so it cannot be updated here. Install it from the Store to get updates; that copy is a separate app.")}</p>
+    if (props.item.noSource) extra = <p className="text-11 leading-4 text-ink-muted">{props.item.noSource === "local"
+        ? tr("Made on this device or copied in by hand, so there is nothing to update it from.")
+        : tr("Installed from a file, so it cannot be updated here. Install it from the Store to get updates; that copy is a separate app.")}</p>
     right = listed
       ? <span className={quiet}>{tr("Checking…")}</span>
       : props.item.noSource

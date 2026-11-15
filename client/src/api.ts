@@ -587,6 +587,8 @@ export interface EngineRelease {
   asset?: { name: string; url: string; size: number }
   /** installed apps whose manifest names an engine range this release is outside */
   incompatibleApps?: { name: string; needs: string }[]
+  /** the app contract this engine supports (APP_API_VERSION) */
+  contract?: string
 }
 
 export interface EngineUpdateState {

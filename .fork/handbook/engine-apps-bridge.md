@@ -1,5 +1,5 @@
 # Apps: the shell bridge, read access between apps, app notifications
-Verified at: molfar.vertep 8310b23 (bridge limit line read at 0d2e559)
+Verified at: molfar.vertep 8310b23 (bridge limit line read at 0d2e559, the build route line at 2c6d4d0)
 
 ## What it does
 An app runs in a sandboxed frame and calls the shell through `window.molfarShell` (also `chrysalisShell`). The shell's host script accepts a frame message only when its nonce matches the frame's record. Engine requests from a frame are relayed by the shell and checked twice, in the browser and on the server. An app may read declared files of another app only after the user allows it. Shell actions and notifications are for trusted (official) apps only.
@@ -66,6 +66,7 @@ An app runs in a sandboxed frame and calls the shell through `window.molfarShell
 - `patternMatches` in `src/apps/reads.ts`: also `seg` and `matches` in `peerSvc` in `src/plugins/sandbox-worker.mjs`.
 - `parseReads` or the `reads` manifest shape: also `validateAppManifest` in `src/apps/manager.ts`, `peerMounts`, and `test/app-reads.test.ts`.
 - `userPaths` in `src/paths.ts`: also `readGrants` and `writeGrants` in `src/apps/reads.ts`.
+- `GET /v1/apps/:id/build` answers `built` (dist/index.html exists); `src/builder/browser/host.ts` puts it on an error status so the shell and the standalone page can say "nothing to show yet" instead of "last good build" when no build ever finished (#337).
 - The delete and rename routes in `buildApp`: keep calling `forgetGrants`, `forgetPeer` and `moveGrants`.
 
 ## Traps
