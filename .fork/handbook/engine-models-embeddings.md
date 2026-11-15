@@ -1,5 +1,5 @@
 # Engine: models, connections, model calls and embeddings
-Verified at: molfar.vertep 5b6f37a (the cache lifetime lines at 2c6d4d0)
+Verified at: molfar.vertep 5b6f37a (the cache lifetime lines on branch claude/cache-keepalive-112)
 
 ## What it does
 - A connection is a user's provider entry; its credentials are read by `readAuth`. `UserModelService` in src/models.ts turns connections into a model list and runs every generation.
@@ -53,9 +53,10 @@ Verified at: molfar.vertep 5b6f37a (the cache lifetime lines at 2c6d4d0)
 - Dropped: null and undefined values; in a plugin block, keys outside the short list (`validateBlock` throws when a block is checked); credential and transport headers (`HEADER_DENY`); `serviceTier` unless `acceptsServiceTier` says yes.
 
 ## Cache lifetime and keep-alive (#112)
-- `generateModel` and `streamFn` pass `cacheRetention: "long"` to pi-ai when the model's mode is `long`: Anthropic `ttl: "1h"`, OpenAI `prompt_cache_retention: "24h"` (sent to every OpenAI-compatible host except a few, so a host that rejects it fails the call; "Check the cache" shows it). Without a mode, pi-ai's default is the short lifetime (about 5 minutes).
-- Keep-alive: `generateInner` pauses the chat's timer when a reply starts (`paramsKey` "reply" and a `sessionId`) and `holdForKeepalive` arms it when the reply ends, only if the mode is `keepalive`, the model has a price, is not on the user's own machine or a text-completion connection, the reply used the cache (`cacheRead` or `cacheWrite` above 0), and had no thinking, tools or schema. A ping goes through `generateResolved` (no block merge, no chat write), is logged as `engine:keepalive`, and must read the cache: a first ping that read nothing blocks the model until its setting changes. State is in memory; a restart drops it.
-- The panel (`CacheLifetime` in client/src/model-panel.tsx) offers the three modes; keep-alive is disabled without a price.
+- `generateModel` and `streamFn` pass `cacheRetention: "long"` to pi-ai when the model's mode is `long` AND `longCacheSupported(model)` (src/model-cache.ts: api.anthropic.com, Claude through openrouter.ai, api.openai.com): Anthropic `ttl: "1h"`, OpenAI `prompt_cache_retention: "24h"`. Measured through NanoGPT (2026-11-15): Claude ignores the ttl, Argon answers 503 to `prompt_cache_key`; so `setCacheMode` refuses `long` elsewhere and `ModelInfo.cacheLong` is false. Without a mode, pi-ai's default is the short lifetime (about 5 minutes).
+- Keep-alive: `generateInner` pauses the chat's timer when a reply starts (`paramsKey` "reply" and a `sessionId`) and `holdForKeepalive` arms it when the reply ends, only if the mode is `keepalive`, the model has a price, is not on the user's own machine or a text-completion connection, the reply used the cache (`cacheRead` or `cacheWrite` above 0), and had no tools or schema, and no thinking if it is Claude (`isClaudeModel`; a thinking Gemini answers a 16-token ping with an empty reply and still renews the cache). Every early return records a reason (`CacheKeepalive.skip`, `KeepaliveStatus.skipped`) that the panel shows. A ping goes through `generateResolved` (no block merge, no chat write), is logged as `engine:keepalive`, and must read the cache: a first ping that read nothing blocks the model until its setting changes. State is in memory; a restart drops it.
+- The panel (`CacheLifetime` in client/src/model-panel.tsx) offers the three modes; keep-alive is disabled without a price, long without `cacheLong`.
+- Roleplay's Request size popup (`request-cache.tsx`, `lib/cache-boundary.ts`) reads `cache` from `GET /v1/models?all=1` and `GET /v1/models/keepalive` (apps may read both) and shows the last reply's `cacheRead`/`cacheWrite`; the prompt peek marks where the cache ends.
 
 ## Embeddings
 - `host.llm.embed(key, {texts, model?, kinds?})` in one pass; `embedResults[key]` and `embedInfo[key]` ({model, via}) arrive next pass. At most 8 per pass (`sandbox-worker.mjs`). `kinds` marks query or document text.

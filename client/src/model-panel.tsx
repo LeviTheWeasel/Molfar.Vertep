@@ -618,6 +618,7 @@ function CacheLifetime(props: { model: ModelDetails; refName: string; onChanged?
   const [err, setErr] = useState("")
   const [status, setStatus] = useState<KeepaliveStatus | null>(null)
   const priced = !!props.model.pricing
+  const longOk = props.model.cacheLong !== false
   useEffect(() => {
     setMode(props.model.cache ?? "default")
   }, [props.model.cache, props.refName])
@@ -646,12 +647,19 @@ function CacheLifetime(props: { model: ModelDetails; refName: string; onChanged?
   }
   const options: { value: CacheMode; label: string; hint: string; off?: boolean }[] = [
     { value: "default", label: tr("Provider's own"), hint: tr("The provider decides, usually about 5 minutes after the last request. Nothing extra is sent.") },
-    { value: "long", label: tr("Long"), hint: tr("Asks the provider to keep the cache for an hour (Claude) or up to a day (GPT). No extra requests, but writing the cache costs more. A provider that does not support it may refuse the call: press Check the cache after choosing.") },
+    {
+      value: "long",
+      label: tr("Long"),
+      hint: longOk
+        ? tr("Asks the provider to keep the cache for an hour (Claude) or up to a day (GPT). No extra requests, but writing the cache costs more.")
+        : tr("Not available on this connection: the provider ignores it or refuses the request. Use Keep alive."),
+      off: !longOk && mode !== "long",
+    },
     {
       value: "keepalive",
       label: tr("Keep alive"),
       hint: priced
-        ? tr("After a chat reply, sends a small request about every 5 minutes for up to 40 minutes, so the cache does not lapse. Each costs about a tenth of the prompt's input price and counts against request limits and subscriptions. Not used with thinking or tools.")
+        ? tr("After a chat reply, sends a small request about every 5 minutes for up to 40 minutes, so the cache does not lapse. Each costs about a tenth of the prompt's input price and counts against request limits and subscriptions. Not used with tools, or with thinking on Claude.")
         : tr("Needs this model's prices: set them above first."),
       off: !priced,
     },
@@ -683,6 +691,8 @@ function CacheLifetime(props: { model: ModelDetails; refName: string; onChanged?
         </div>
       ) : null}
       {mode === "keepalive" && status?.stopped ? <div className="text-11 text-warning">{status.stopped}</div> : null}
+      {mode === "keepalive" && status?.skipped ? <div className="text-11 text-warning">{status.skipped}</div> : null}
+      {mode === "long" && !longOk ? <div className="text-11 text-warning">{tr("Not available on this connection: the provider ignores it or refuses the request. Use Keep alive.")}</div> : null}
       {err ? <div className="text-11 text-danger">{err}</div> : null}
     </div>
   )

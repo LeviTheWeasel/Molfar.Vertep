@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai/providers/faux";
 import { CacheKeepalive, type PingResult, type Timers } from "../src/cache-keepalive.js";
-import { readCacheModes, writeCacheMode } from "../src/model-cache.js";
+import { isClaudeModel, longCacheSupported, readCacheModes, writeCacheMode } from "../src/model-cache.js";
 import { UserModelService } from "../src/models.js";
 import { defaultInstanceConfig } from "../src/config.js";
 import { bootstrapUserDir } from "../src/paths.js";
@@ -146,17 +146,19 @@ describe("cache settings on a model call", () => {
   });
   afterEach(() => fs.rmSync(dataDir, { recursive: true, force: true }));
 
-  const service = (id: string) => {
-    const svc = new UserModelService("alice", bootstrapUserDir(dataDir, "alice"), defaultInstanceConfig());
+  const service = (id: string, baseUrl = "https://faux.example/v1") => {
+    const paths = bootstrapUserDir(dataDir, "alice");
+    const svc = new UserModelService("alice", paths, defaultInstanceConfig());
     const handle = fauxProvider({ models: [{ id }] });
     // the faux model says localhost, and keep-alive never runs against a model on the user's own machine
-    (handle.getModel(id) as { baseUrl: string }).baseUrl = "https://faux.example/v1";
+    (handle.getModel(id) as { baseUrl: string }).baseUrl = baseUrl;
     svc.models.setProvider(handle.provider);
-    return { svc, handle };
+    return { svc, handle, root: paths.root };
   };
 
   it("long asks pi-ai for the long lifetime, and default does not", async () => {
-    const { svc, handle } = service("faux-life");
+    // a host that honours it (OpenAI's own)
+    const { svc, handle } = service("faux-life", "https://api.openai.com/v1");
     const seen: Array<unknown> = [];
     const answer = (_c: unknown, options: unknown) => {
       seen.push((options as { cacheRetention?: string })?.cacheRetention);
@@ -167,7 +169,25 @@ describe("cache settings on a model call", () => {
     await svc.setCacheMode("faux/faux-life", "long");
     await svc.generate({ model: "faux/faux-life", messages: [{ role: "user", content: "hi" }] });
     expect(seen).toEqual([undefined, "long"]);
-    expect((await svc.available()).find((m) => m.modelId === "faux-life")?.cache).toBe("long");
+    const info = (await svc.available()).find((m) => m.modelId === "faux-life");
+    expect(info).toMatchObject({ cache: "long", cacheLong: true });
+  }, 20_000);
+
+  it("long is refused, and never sent, where the connection does not honour it", async () => {
+    const { svc, handle, root } = service("faux-gw");
+    await expect(svc.setCacheMode("faux/faux-gw", "long")).rejects.toThrow(/does not honour/);
+    expect((await svc.available()).find((m) => m.modelId === "faux-gw")?.cacheLong).toBe(false);
+    // a value left in the file from before is not sent either
+    writeCacheMode(root, "faux/faux-gw", "long");
+    const seen: Array<unknown> = [];
+    handle.setResponses([
+      (_c: unknown, options: unknown) => {
+        seen.push((options as { cacheRetention?: string })?.cacheRetention);
+        return fauxAssistantMessage("ok");
+      },
+    ]);
+    await svc.generate({ model: "faux/faux-gw", messages: [{ role: "user", content: "hi" }] });
+    expect(seen).toEqual([undefined]);
   }, 20_000);
 
   it("keep-alive needs a price, then replays the reply's request with a tiny answer limit", async () => {
@@ -213,8 +233,46 @@ describe("cache settings on a model call", () => {
     // another request of the same chat (a sensor, a summary) is not the cache worth keeping
     await svc.generate({ ...base, paramsKey: "sensor" });
     expect(t.waiting()).toBe(0);
-    // thinking cannot be replayed with a 16-token answer
-    await svc.generate({ ...base, paramsKey: "reply", reasoning: "high" });
+    expect(svc.keepaliveStatus("faux/faux-other").skipped).toBeNull();
+    // tools cannot be replayed as they were, and the panel is told why
+    await svc.generate({ ...base, paramsKey: "reply", tools: [{ name: "t", description: "d", parameters: { type: "object", properties: {} } } as never] });
     expect(t.waiting()).toBe(0);
   }, 20_000);
+
+  it("says why a reply was not held, and lets a thinking model that is not Claude be kept", async () => {
+    const { svc, handle, root } = service("faux-why");
+    await svc.setCacheMode("faux/faux-why", "default");
+    const t = fakeTimers();
+    (svc as unknown as { keepalive: CacheKeepalive }).keepalive = new CacheKeepalive(t.timers, 1000, 8);
+    handle.setResponses([fauxAssistantMessage("a"), fauxAssistantMessage("b"), fauxAssistantMessage("c")]);
+    const req = { model: "faux/faux-why", sessionId: "c9", paramsKey: "reply", source: "app:roleplay/engine", messages: [{ role: "user" as const, content: "story" }], reasoning: "high" as const };
+    // no price yet: set the mode by hand, since setCacheMode would refuse
+    writeCacheMode(root, "faux/faux-why", "keepalive");
+    await svc.generate(req);
+    expect(svc.keepaliveStatus("faux/faux-why").skipped).toMatch(/no known price/);
+    svc.setPricingOverride("faux/faux-why", { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 });
+    await svc.generate(req);
+    // a thinking model that is not Claude is held (the faux provider reports a cache read from the second reply on)
+    expect(svc.keepaliveStatus("faux/faux-why").skipped).toBeNull();
+    expect(t.waiting()).toBe(1);
+  }, 20_000);
+});
+
+describe("which connections get what", () => {
+  const shape = (api: string, id: string, baseUrl: string) => ({ api, id, baseUrl });
+  it("the long lifetime only where it was seen to work", () => {
+    expect(longCacheSupported(shape("anthropic-messages", "claude-x", "https://api.anthropic.com"))).toBe(true);
+    expect(longCacheSupported(shape("openai-completions", "anthropic/claude-x", "https://openrouter.ai/api/v1"))).toBe(true);
+    expect(longCacheSupported(shape("openai-responses", "gpt-x", "https://api.openai.com/v1"))).toBe(true);
+    // measured: the gateway ignores the Claude ttl, and a Gemini model refuses the cache key that goes with it
+    expect(longCacheSupported(shape("openai-completions", "anthropic/claude-x", "https://nano-gpt.com/api/v1"))).toBe(false);
+    expect(longCacheSupported(shape("openai-completions", "google/gemini-4-argon", "https://nano-gpt.com/api/v1"))).toBe(false);
+    expect(longCacheSupported(shape("openai-completions", "openai/gpt-x", "https://openrouter.ai/api/v1"))).toBe(false);
+    expect(longCacheSupported(shape("openai-completions", "x", "not a url"))).toBe(false);
+  });
+  it("tells Claude from the rest", () => {
+    expect(isClaudeModel(shape("openai-completions", "anthropic/claude-haiku-5.5", "https://nano-gpt.com/api/v1"))).toBe(true);
+    expect(isClaudeModel(shape("anthropic-messages", "x", "https://api.anthropic.com"))).toBe(true);
+    expect(isClaudeModel(shape("openai-completions", "google/gemini-3.8-flash", "https://nano-gpt.com/api/v1"))).toBe(false);
+  });
 });

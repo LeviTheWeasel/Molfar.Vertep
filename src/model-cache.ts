@@ -45,3 +45,35 @@ export function writeCacheMode(root: string, ref: unknown, mode: unknown): Recor
   fs.writeFileSync(path.join(root, MODEL_CACHE_FILE), JSON.stringify({ v: 1, models: table }, null, 2));
   return table;
 }
+
+interface CacheModelShape {
+  api: string;
+  id: string;
+  baseUrl: string;
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Where asking for the long lifetime does something. Measured with live requests (#112): through NanoGPT a
+ * Claude model ignores the one-hour ttl (same price, cache gone after 7 minutes) and Argon answers 503 to the
+ * `prompt_cache_key` that goes with it. So only the places that are known to honour it get it:
+ * Anthropic itself, Claude through OpenRouter, and OpenAI. Everywhere else `long` is not sent.
+ */
+export function longCacheSupported(model: CacheModelShape): boolean {
+  const host = hostOf(model.baseUrl);
+  if (model.api === "anthropic-messages") return host === "api.anthropic.com";
+  if (host === "api.openai.com") return true;
+  return (host === "openrouter.ai" || host.endsWith(".openrouter.ai")) && model.id.startsWith("anthropic/");
+}
+
+/** A Claude model, however it is reached: its thinking needs a larger answer limit than a keep-alive request has. */
+export function isClaudeModel(model: CacheModelShape): boolean {
+  return model.api === "anthropic-messages" || /(^|\/)anthropic[/.]|(^|\/)claude-/i.test(model.id);
+}

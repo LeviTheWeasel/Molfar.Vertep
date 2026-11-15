@@ -30,6 +30,8 @@ export interface KeepaliveStatus {
   active: number;
   /** Why it stopped, in words for the user; null while nothing went wrong. */
   stopped: string | null;
+  /** Why the last chat reply was not held for it (no price, a thinking Claude, tools...); null when it was. */
+  skipped: string | null;
 }
 
 export interface Timers {
@@ -58,6 +60,7 @@ interface Stat {
   lastAt: number | null;
   lastRead: number | null;
   stopped: string | null;
+  skipped: string | null;
   /** The first request read nothing: no more until the setting changes. */
   blocked: boolean;
 }
@@ -76,7 +79,7 @@ export class CacheKeepalive {
   private stat(ref: string): Stat {
     let s = this.stats.get(ref);
     if (!s) {
-      s = { sent: 0, lastAt: null, lastRead: null, stopped: null, blocked: false };
+      s = { sent: 0, lastAt: null, lastRead: null, stopped: null, skipped: null, blocked: false };
       this.stats.set(ref, s);
     }
     return s;
@@ -86,10 +89,16 @@ export class CacheKeepalive {
   arm(key: string, ref: string, send: () => Promise<PingResult>): void {
     this.pause(key);
     const stat = this.stat(ref);
+    stat.skipped = null;
     if (stat.blocked) return;
     const session: Session = { ref, send, pings: 0, timer: null };
     this.sessions.set(key, session);
     this.schedule(key, session);
+  }
+
+  /** A reply was not held for keep-alive, for this reason (null: nothing to say). The panel shows it. */
+  skip(ref: string, reason: string | null): void {
+    this.stat(ref).skipped = reason;
   }
 
   /** A real request for `key` is starting (or the chat is gone): nothing is kept for it until its reply ends. */
@@ -110,7 +119,7 @@ export class CacheKeepalive {
     const s = this.stats.get(ref);
     let active = 0;
     for (const session of this.sessions.values()) if (session.ref === ref) active++;
-    return { sent: s?.sent ?? 0, lastAt: s?.lastAt ?? null, lastRead: s?.lastRead ?? null, active, stopped: s?.stopped ?? null };
+    return { sent: s?.sent ?? 0, lastAt: s?.lastAt ?? null, lastRead: s?.lastRead ?? null, active, stopped: s?.stopped ?? null, skipped: s?.skipped ?? null };
   }
 
   stopAll(): void {

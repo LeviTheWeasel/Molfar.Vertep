@@ -64,6 +64,8 @@ export interface ModelDetails extends PickerModel {
   pricing: ModelPricing | null
   /** How long the provider is asked to keep this model's prompt cache; absent = default. */
   cache?: CacheMode
+  /** The connection honours the long lifetime (the engine tried it); false = offer only the provider's own and keep-alive. */
+  cacheLong?: boolean
 }
 
 export type CacheMode = "default" | "long" | "keepalive"
@@ -75,6 +77,8 @@ export interface KeepaliveStatus {
   lastRead: number | null
   active: number
   stopped: string | null
+  /** Why the last chat reply was not held (no price, tools...); null when it was. */
+  skipped: string | null
 }
 
 /** A starred model in the quick-switch list, with an optional name of its own. */
