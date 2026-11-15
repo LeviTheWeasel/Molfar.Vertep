@@ -1,5 +1,5 @@
 # Litopys: story memory, who knows what, and the What fired record
-Verified at: molfar.vertep-roleplay 91eec33
+Verified at: molfar.vertep-roleplay efead2b (sections: Owners, Data, Who knows what, Tests); Owners also 4e0989b; the rest at 91eec33
 
 ## What it does
 - Litopys keeps one record per chat: chapters (one per closed scene), arcs (older chapters merged), and facts, each with the people who know it. A background worker writes it; the reply hook only reads it.
@@ -21,21 +21,24 @@ Verified at: molfar.vertep-roleplay 91eec33
 - `plugins/litopys/plugin.js` `verbatimFor`, `recallCandidates`, `recallBuild`, `recallSave`: word-for-word passages and their index.
 - `plugins/litopys/plugin.js` `witnessed`, `castKnowledgeFor`, `soleVoice`: who knows what.
 - `plugins/litopys/plugin.js` `liveLies`, `moveLies`, `endBeliefs`: lies and the belief facts they become.
+- `plugins/litopys/plugin.js` `suspectsOf`, `KNOWING_RULE`, op `knows` in `applyWorkerResult`: suspects and secrets on facts (#416).
+- `plugins/litopys/plugin.js` `remoteNotesFor`, `farOfSnap`, `remoteNoteText`: a line after each player message of a remote scene (#415).
 - `plugins/litopys/plugin.js` `markUsed`, `causeRecord`, `pushTraceRing`: insert file use record and trace ring.
 - `plugins/litopys/plugin.js` `recordLitFired`: writes the What fired counter.
 - `plugins/litopys/plugin.js` `firedRoute`, `traceRoute`: serve GET /litopys/fired and the reply trace.
 - `plugins/litopys/plugin.js` `vectorGaps`, `vectorOf`, `kickEmbedWant`: embedding gaps, lookup, request.
 - `src/lib/fired-load.ts` `/litopys/fired`: client read of the counter.
+- `plugins/litopys/plugin.js` `applyHabits` `repeatsCardText`: earns chat habits from the worker's list; drops one that restates the card or a book (`worker.habits` counts offered, kept, repeats, over the limit); the worker sees the card's accepted habits as "Already on the card" (`buildWorkerRequest`).
 
 ## Data
 Per chat unless noted.
-- `litopys/chats/<id>.json`: the record. `chapters[]`: `id`, `from`, `to`, `label`, `text` (at most 1500 characters), `cast`, optional `views`, `marked`. `facts[]`: `id`, `text`, `subject`, `knownBy` (`"all"`, names or group tokens), `type` (event, trait, change, relation, world, plan, belief), `weight` (everyday, important, key), `pinned`, `status` (`active` or `retired`), `src`, `origin`, `at`, `updatedAt`. A belief adds `holder`, `lie`, `prov`. `turns[]`: `id`, `text`, `chapterId`, `cast`, `knownBy`, `origin`, optional `untrue`, `believers`, `liar`.
+- `litopys/chats/<id>.json`: the record. `chapters[]`: `id`, `from`, `to`, `label`, `text` (at most 1500 characters), `cast`, optional `views`, `marked`. `facts[]`: `id`, `text`, `subject`, `knownBy` (`"all"`, names or group tokens), `type` (event, trait, change, relation, world, plan, belief), `weight` (everyday, important, key), `pinned`, `status` (`active` or `retired`), `src`, `origin`, `at`, `updatedAt`. A belief adds `holder`, `lie`, `prov`. Optional `suspectedBy` (never a knower) and `secret: true` (#416). `turns[]`: `id`, `text`, `chapterId`, `cast`, `knownBy`, `origin`, optional `untrue`, `believers`, `liar`.
 - `litopys/far/<id>.json`: digest `{v, chatId, rev, units, facts, turns}`.
 - `.cache/litopys/vectors/<id>.json`: `{id: {hash, vector, m?}}`.
 - `litopys/recall/<id>.json` (index: `p` = word stem to chunk numbers, `n`, `title`, `rev`) and `<id>.t.json` (chunks: `t`, `a`, `b`, `c` cast, `k` chapter).
 - `litopys/insert/<id>.json`: `used`, `tokens`, `facts`, `chapters`, `cut`, optional `trace`, `causes`, `backstory`, `verbatim`.
 - `litopys/fired/<id>.json`: `{v: 1, since, replies, facts, chapters, far?, verbatim?, last: {op, at, keys}}`; each map holds `{n, at}` per id.
-- `litopys/config.json` (not per chat): only user changes. Defaults in `DEFAULT_CONFIG`: `budget` 800, `budgetMode` `auto`, `linkBudget` 800, `verbatimBudget` 400, `farShare` 18, `turnsShown` 12.
+- `litopys/config.json` (not per chat): only user changes. Defaults in `DEFAULT_CONFIG`: `budget` 800, `budgetMode` `auto`, `linkBudget` 800, `verbatimBudget` 400, `farShare` 18, `turnsShown` 12, `remoteNote` and `suspects` true. The insert file adds `remote: {notes}`.
 
 ## When a model is called, and when code decides
 - Model calls go through `host.llm`: the chapter worker from `onTick`, plus arc, consolidate, summary and scene-suggest requests. Embeddings go out as `host.llm.embed` under `lit_emb_<chat>` from `kickEmbedWant`.
@@ -55,6 +58,8 @@ Per chat unless noted.
 - Set: `queueAdd` gives a new fact `knownBy: "all"` by default. `applyWorkerResult` sets the chapter's `cast` from witnesses. `applyTurns` sets a turning point's `knownBy` to its witnesses, or `"all"`.
 - Beliefs: `moveLies` writes a belief with `knownBy: [holder]`, `holder`, `lie`, `prov`, `origin: "dashboard"`. `endBeliefs` retires it when the holder is exposed or the lie is removed. `liveLies` computes believers as those who heard the lie, less those exposed and the liar.
 - Read: `buildInsert` (its `known` test), `witnessed`, `castKnowledgeFor`, `turnsFor`/`knownTo`, `untrueTail`, and `verbatimFor` (passages, via `witnessed`).
+- Suspects (#416): `buildInsert` gives a fact to someone in `suspectedBy`, marked "(only a suspicion...)" (`factLineOf` 4th argument); `castKnowledgeFor` adds "(B suspects; keeps it secret)"; the Dashboard's `restrictedFacts` counts suspects as knowers. The worker's op `knows` grows `knownBy`/`suspectedBy` of a known fact.
+- Remote contact (#415): `remoteNotesFor` runs in `llmRequest` after the presence cut, on its output, unless `remoteNote` is false or Litopys is off for the chat.
 - Names go through the entity registry (`litCanon`).
 
 ## If you change X, also touch Y
@@ -63,7 +68,7 @@ Per chat unless noted.
 - Insert file fields: `traceRoute`, `carriesRoute`, `causeRecord`, and the engine readers listed in `docs/COUPLINGS.md`.
 - What fired: `recordLitFired`, `firedRoute`, `src/lib/fired-load.ts`. The engine keeps its own counter, shown beside this one.
 - Passage index format: `recallSave`, `recallBuild`, `recallCandidates`, `verbatimFor`; bump `RECALL_V`.
-- Embedding model: `vectorOf`, `vectorGaps`. Vectors of another model are not used.
+- Embedding model: `vectorOf`, `vectorGaps`, `currentEmbedModel`, `noteScanModel`. Vectors of another model are not used. This device's model is read only from `.cache/litopys/embed-status.json`, never from the synced `litopys/insert/` trace (it carries the model of whichever device replied last; #419).
 - Lies and beliefs: `liveLies`, `endBeliefs`, `moveLies`, and the believers copy in the Dashboard plugin.
 
 ## Traps
@@ -80,6 +85,7 @@ Per chat unless noted.
 Names confirmed in `test/`. Coverage claims come from `docs/COUPLINGS.md`; test bodies were not read.
 - `test/rp-litopys-far-turns.test.ts`, `test/rp-chat-links.test.ts`, `test/rp-litopys-causes.test.ts`, `test/rp-litopys-recency.test.ts`, `test/rp-litopys-budget.test.ts`
 - `test/rp-memory-trace.test.ts`, `test/rp-fired-lit.test.ts`, `test/rp-fired-log.test.ts`, `test/rp-verbatim.test.ts`, `test/rp-fired-verbatim.test.tsx`
+- `test/rp-knowledge-invariants.test.ts` (remote notes, suspects, the worker's `knows` op, invariants)
 - `test/rp-litopys-beliefs.test.ts`, `test/rp-litopys-risky.test.ts`, `test/rp-trace-belief.test.tsx`, `test/rp-presence-cut.test.ts`, `test/rp-studio.test.ts`
 
 ## Not verified

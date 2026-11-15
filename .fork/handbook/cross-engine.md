@@ -44,6 +44,7 @@ Traps:
 - `parseReads` lives in `src/apps/reads.ts`, not `src/apps/manager.ts`. The manager only calls it.
 - A decision covers only the patterns it was made for. A manifest that asks for a new pattern makes the user answer again.
 - The worker's matcher is a separate copy and must stay in step with `patternMatches`.
+- The frame's `fetch` is the bridge: a request body over 32 MB (`TOO_BIG` in `client/public/app-bridge.js`) is refused inside the frame, before any network, and the app's own error wrapper shows it as a lost connection. An app that has more to send sends it in parts (Roleplay's backup import does, `splitLibrary`).
 - No server code handles app notices. The `notify` op stops in the browser. The `bus.emit` call in `src/server/app.ts` is the agent's event bus, not an app notice.
 - The browser copy decodes the path with `decodeURIComponent` and refuses a path that does not decode. The server relies on the router's decoded path.
 
@@ -57,6 +58,7 @@ Change X, touch Y:
 - Embedding order or defaults: `embed` and `readEmbedSettings` in src/models.ts, and the PUT check in src/server/app.ts.
 - A provider wire: `buildProvider` in src/providers/custom.ts and the registration in src/models.ts. Keep `tolerantSseFetch` on custom connections.
 - Pacing: `DEFAULT_PACE` and the bounds in src/plugins/llm-pace.ts.
+- A new cache mode: `CACHE_MODES` in src/model-cache.ts, `ModelInfo.cache`, the PUT route, `CacheLifetime` in client/src/model-panel.tsx, and the "shell only" lists in test/security.test.ts and test/malicious-plugin.test.ts.
 
 Traps:
 - `embed` drops blank texts before embedding, and `runPassRequests` returns the shorter list unchanged. A plugin can get fewer vectors than texts; check the length and align by position.

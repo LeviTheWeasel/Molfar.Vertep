@@ -15,13 +15,16 @@ Change X, touch Y:
 - Name helpers: `askSensor` depends on `expandNamesFor`, which has copies in other plugins (`docs/COUPLINGS.md`, helper names).
 
 Traps:
+- A new constellation: `CONSTELLATIONS` (first match wins), `BOND_WORDS`, UI `CONSTELLATION_STATS`, `dash.const.*`/`dash.constLine.*`, `test/rp-dashboard.test.ts`. `cfg.bond.inject` switches the line off. UI labels (`tierIndex`) have four steps, the prompt eight.
 - A non-JSON answer is not retried. Only a rate-limit error is.
+- A character missing from `present` for one turn used to lose their `Wearing:` ids in the next sensor input, and came back with duplicate garments (#409). The ids of absent characters are listed now; do not cut that line to save tokens.
+- The guards in `applyLedger` (`goneWhere`, `speaksOf`, `sameKindOfGarment`) read English item texts only. An item text in another language passes through as before.
+- An item that is not in `see` stays for ever, and a removal no sentence describes is never reported (#410).
 - A snapshot without `sig` is never read again.
 - The sensor sees the previous people lines but never the previous thought.
 - A clock time the report does not state is marked approximate. The day count only moves forward.
 - A new insert part without a row in `insertCeiling` overflows the window silently.
 - A user journal line always wins over a sensor line. No route writes user lines yet.
-- The comment above `journalPreviousLines` and `test/rp-dash-journal.test.ts` cited `docs/JOURNAL-HANDOFF.md`, a handoff file deleted in the commit that built the journal (03978ad). Both now point at `docs/DATA-FORMATS.md`, "The character journal" (Roleplay branch `claude/handbook-findings`, 0185b00).
 
 
 ## From `roleplay-entity-registry.md`
@@ -81,6 +84,7 @@ Traps:
 - Card regex scripts are stored twice.
 - A chat without a sidecar lands on preset `default` and the settings persona.
 - The chat-memory `dup` flag is a mark only; it does not block selection.
+- A library zip with a sprite folder but no card of that name in the same import leaves the sprites unattached (a note says so); the pictures stay in the asset store.
 
 
 ## From `roleplay-letters-mailbox.md`
@@ -110,7 +114,7 @@ Change X, touch Y:
 - Insert file fields: `traceRoute`, `carriesRoute`, `causeRecord`, and the engine readers listed in `docs/COUPLINGS.md`.
 - What fired: `recordLitFired`, `firedRoute`, `src/lib/fired-load.ts`. The engine keeps its own counter, shown beside this one.
 - Passage index format: `recallSave`, `recallBuild`, `recallCandidates`, `verbatimFor`; bump `RECALL_V`.
-- Embedding model: `vectorOf`, `vectorGaps`. Vectors of another model are not used.
+- Embedding model: `vectorOf`, `vectorGaps`, `currentEmbedModel`, `noteScanModel`. Vectors of another model are not used. This device's model is read only from `.cache/litopys/embed-status.json`, never from the synced `litopys/insert/` trace (it carries the model of whichever device replied last; #419).
 - Lies and beliefs: `liveLies`, `endBeliefs`, `moveLies`, and the believers copy in the Dashboard plugin.
 
 Traps:
@@ -129,6 +133,7 @@ Traps:
 Change X, touch Y:
 - A lorebook field: `docs/DATA-FORMATS.md` ("Lorebooks"), `src/lib/types.ts`, `lorebookToEngine`, `normalizeBook` (`docs/COUPLINGS.md`).
 - Scan rules: `activateWorldInfo` and its `dryRun` guards, the labels in `blockedText`, and the `recordFired` shape (`docs/DATA-FORMATS.md`, "What fired").
+- `chatBookReport` builds the "never" key as `recordFired` writes it (`<bookId>:<uid ?? title>`). The log keeps 300 entries, so a full log (`capped`) only hints at "never".
 - Vectors: keep the cache local (`.cache/lorebooks`) and the model tag `m`. Embed calls must send `kinds` (`docs/COUPLINGS.md`).
 - Regex stages: `runRegexScripts` and `resolveDisplayScripts`. The 500-character cap is in the engine and in `MAX_PATTERN`; keep them equal.
 - Macros: `expandMacros` and `subMacros` in `WORKER_SRC`.
