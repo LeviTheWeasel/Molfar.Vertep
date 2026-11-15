@@ -26,6 +26,8 @@ import type { UserPaths } from "./paths.js";
 import type { InstanceConfig } from "./config.js";
 import { ImageError, endpointGenerate, endpointPromptStyle, imageEndpoint, listEndpointOptions, type EndpointOptions, listEndpointModels, listImageEndpoints, geminiGenerate, geminiImageModels, mapCatalogError, nanoGptGenerate, nanoGptImageModels, providerError, readImageFavorites, type ImageFavorite, type ListedImageModel } from "./images.js";
 import { acceptsServiceTier, blockFor, blockValues, mergeParams, readModelParams, type AppliedParams } from "./model-params.js";
+import { readCacheModes, writeCacheMode, type CacheMode } from "./model-cache.js";
+import { CacheKeepalive, type KeepaliveStatus } from "./cache-keepalive.js";
 
 /** The modify running on each auth.json, so the next one waits for it. */
 const authFileQueue = new Map<string, Promise<void>>();
@@ -219,6 +221,8 @@ export interface ModelInfo {
    *  spends money, and its price is shown. False when the user (globally or for
    *  its connection) or its own-machine endpoint says no (#91). */
   costChecks: boolean;
+  /** How long the provider is asked to keep this model's prompt cache (#112). */
+  cache: CacheMode;
 }
 
 /** A starred model in the quick-switch list. */
@@ -605,6 +609,29 @@ export class UserModelService {
     return file;
   }
 
+  /** How long this model's prompt cache is asked to live (model-cache.json, #112). */
+  cacheMode(ref: string): CacheMode {
+    return readCacheModes(this.paths.root)[ref] ?? "default";
+  }
+
+  /** Change a model's cache setting. Keep-alive sends extra requests, so it needs a price the engine knows. */
+  async setCacheMode(ref: string, mode: unknown): Promise<CacheMode> {
+    if (mode === "keepalive") {
+      const model = (await this.models.getAvailable()).find((m) => `${m.provider}/${m.id}` === ref);
+      if (model && !this.pricingFor(model)) throw new Error("Keep-alive is for a model with a known price: set its prices first.");
+    }
+    writeCacheMode(this.paths.root, ref, mode);
+    this.keepalive.reset(ref);
+    return this.cacheMode(ref);
+  }
+
+  keepaliveStatus(ref: string): KeepaliveStatus {
+    return this.keepalive.status(ref);
+  }
+
+  /** Chats being kept warm: the held replies of keep-alive (cache-keepalive.ts). */
+  private keepalive = new CacheKeepalive();
+
   /** The models the pickers offer (models-shown.json, a list of
    *  "<provider>/<model>"). Empty means every model: three connections can
    *  bring a thousand models, and the user switches on the few they use.
@@ -914,6 +941,7 @@ export class UserModelService {
     await this.ensureRefreshed();
     const overrides = this.contextOverrides();
     const pricing = this.pricingOverrides();
+    const cacheModes = readCacheModes(this.paths.root);
     const globalCost = readCostChecksMode(this.paths.settings);
     const conns = readConnections(this.paths).connections;
     // `:batch` twins (OpenRouter, Nous and others list one per model) are served by the provider's batch API
@@ -930,6 +958,7 @@ export class UserModelService {
       images: Array.isArray(m.input) && m.input.includes("image"),
       pricing: pricing[`${m.provider}/${m.id}`] ?? normalizePricing(m.cost),
       costChecks: costChecksApply(resolveCostChecksMode(globalCost, connectionCostChecks(conns, m.provider)), m),
+      cache: cacheModes[`${m.provider}/${m.id}`] ?? "default",
     }));
   }
 
@@ -1277,7 +1306,11 @@ export class UserModelService {
   async generateInner(req0: GenerateRequest, onDelta?: (delta: string) => void, onThinking?: (delta: string) => void): Promise<GenerateResult> {
     const model = await this.resolveModel(req0.model ?? null);
     const { req, applied } = this.withModelParams(model, req0);
+    // keep-alive holds the last reply's request per chat; a new reply for the chat takes over from it
+    const warmKey = req.paramsKey === "reply" && req.sessionId ? `${req.sessionId}|${model.provider}/${model.id}` : null;
+    if (warmKey) this.keepalive.pause(warmKey);
     const res = await this.generateResolved(model, req, onDelta, onThinking);
+    if (warmKey) this.holdForKeepalive(warmKey, model, req, res);
     if (applied.block) {
       res.requestParams = {
         ...(applied.temperature !== undefined ? { temperature: applied.temperature } : {}),
@@ -1289,6 +1322,25 @@ export class UserModelService {
       };
     }
     return res;
+  }
+
+  /** After a chat reply on a model set to keep-alive: hold the request so a timer can replay it (cache-keepalive.ts). */
+  private holdForKeepalive(key: string, model: Model<Api>, req: GenerateRequest, res: GenerateResult): void {
+    const ref = `${model.provider}/${model.id}`;
+    if (this.cacheMode(ref) !== "keepalive") return;
+    // only a priced, remote model that really caches: otherwise a ping pays for nothing
+    if (!this.pricingFor(model) || isLocalEndpoint(model.baseUrl) || this.textCompletions.has(model.provider)) return;
+    if ((res.usage?.cacheRead ?? 0) + (res.usage?.cacheWrite ?? 0) <= 0) return;
+    // a request with thinking or tools cannot be replayed with a 16-token answer
+    if ((req.reasoning && req.reasoning !== "off") || req.tools?.length || req.schema) return;
+    const { signal: _signal, ...rest } = req;
+    const ping: GenerateRequest = { ...rest, source: "engine:keepalive", presetParams: { ...req.presetParams, max_tokens: 16 } };
+    this.keepalive.arm(key, ref, async () => {
+      const t0 = Date.now();
+      const r = await this.generateResolved(model, { ...ping, signal: AbortSignal.timeout(60_000) });
+      llmLogResult("engine:keepalive", ref, Date.now() - t0, r);
+      return { cacheRead: r.usage?.cacheRead ?? 0, cacheWrite: r.usage?.cacheWrite ?? 0, input: r.usage?.input ?? 0 };
+    });
   }
 
   /** The model's parameter block for this caller, merged into the request (model-params.ts). */
@@ -1335,6 +1387,8 @@ export class UserModelService {
     // gateway, the routing/caching session headers.
     const sessionId = req.sessionId ?? uuidv7();
     const sessionHeaders = opencodeSessionHeaders(model, sessionId);
+    // "long" cache lifetime for this model (model-cache.ts): pi-ai asks the provider for 1 hour (Anthropic) or 24 hours (OpenAI)
+    const cacheOpts = this.cacheMode(`${model.provider}/${model.id}`) === "long" ? { cacheRetention: "long" as const } : {};
     // text-completion connections never reach pi-ai: the chat turns flatten
     // into a single prompt and stream back through the same callbacks
     if (this.textCompletions.has(model.provider)) {
@@ -1565,6 +1619,7 @@ export class UserModelService {
         ...(req.signal ? ({ signal: req.signal } as never) : {}),
         // key provider prompt caching (set when a cache session exists)
         sessionId,
+        ...cacheOpts,
         ...(sessionHeaders || req.modelHeaders ? { headers: { ...req.modelHeaders, ...sessionHeaders } } : {}),
       });
       const final = await consumeStream(stream);
@@ -1630,6 +1685,7 @@ export class UserModelService {
       onProviderStreamEvent: upstream.watch,
       ...(req.signal ? ({ signal: req.signal } as never) : {}),
       sessionId,
+      ...cacheOpts,
       ...(sessionHeaders || req.modelHeaders ? { headers: { ...req.modelHeaders, ...sessionHeaders } } : {}),
     });
     roundThinkStart = 0;
@@ -1744,6 +1800,7 @@ export class UserModelService {
     const merged = {
       ...options,
       ...fromBlock,
+      ...(this.cacheMode(`${model.provider}/${model.id}`) === "long" ? { cacheRetention: "long" as const } : {}),
       sessionId: options?.sessionId ?? sid,
       ...(headers ? { headers } : {}),
     };

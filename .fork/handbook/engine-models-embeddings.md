@@ -1,5 +1,5 @@
 # Engine: models, connections, model calls and embeddings
-Verified at: molfar.vertep 5b6f37a
+Verified at: molfar.vertep 5b6f37a (the cache lifetime lines at 2c6d4d0)
 
 ## What it does
 - A connection is a user's provider entry; its credentials are read by `readAuth`. `UserModelService` in src/models.ts turns connections into a model list and runs every generation.
@@ -20,6 +20,8 @@ Verified at: molfar.vertep 5b6f37a
 - `src/model-params.ts` `mergeParams`: the rule between block and request.
 - `src/model-params.ts` `validateBlock`: checks what a block may hold; refuses credential headers.
 - `src/model-params.ts` `acceptsServiceTier`: decides whether `service_tier` is sent.
+- `src/model-cache.ts` `readCacheModes`, `writeCacheMode`: how long a model's prompt cache is asked to live (model-cache.json: `long`, `keepalive`; absent = default). Routes `PUT /v1/models/cache` and `GET /v1/models/keepalive`, shell only.
+- `src/cache-keepalive.ts` `CacheKeepalive`: holds the last chat reply's request per chat and replays it on a timer (`PING_MS` 280 s, `MAX_PINGS` 8) with a 16-token answer; `src/models.ts` `holdForKeepalive` decides which replies qualify.
 - `src/cache-probe.ts` `cacheProbe`: sends two identical long prompts and reads whether the second was cached (route `"/v1/models/cache-check"`, src/server/app.ts).
 - `src/plugins/runtime.ts` `runPassRequests`: runs one pass's llm and embed requests.
 - `src/plugins/runtime.ts` `applyLlmRequestHooks`: lets sibling plugins patch a route's request.
@@ -50,6 +52,11 @@ Verified at: molfar.vertep 5b6f37a
 - Blocks, chosen by `blockFor`: `chat` (app reply, key "reply", and API callers), `plugins`, `plugin:<app>/<plugin>` over `plugins`, and `molfar` for the built-in agent.
 - Dropped: null and undefined values; in a plugin block, keys outside the short list (`validateBlock` throws when a block is checked); credential and transport headers (`HEADER_DENY`); `serviceTier` unless `acceptsServiceTier` says yes.
 
+## Cache lifetime and keep-alive (#112)
+- `generateModel` and `streamFn` pass `cacheRetention: "long"` to pi-ai when the model's mode is `long`: Anthropic `ttl: "1h"`, OpenAI `prompt_cache_retention: "24h"` (sent to every OpenAI-compatible host except a few, so a host that rejects it fails the call; "Check the cache" shows it). Without a mode, pi-ai's default is the short lifetime (about 5 minutes).
+- Keep-alive: `generateInner` pauses the chat's timer when a reply starts (`paramsKey` "reply" and a `sessionId`) and `holdForKeepalive` arms it when the reply ends, only if the mode is `keepalive`, the model has a price, is not on the user's own machine or a text-completion connection, the reply used the cache (`cacheRead` or `cacheWrite` above 0), and had no thinking, tools or schema. A ping goes through `generateResolved` (no block merge, no chat write), is logged as `engine:keepalive`, and must read the cache: a first ping that read nothing blocks the model until its setting changes. State is in memory; a restart drops it.
+- The panel (`CacheLifetime` in client/src/model-panel.tsx) offers the three modes; keep-alive is disabled without a price.
+
 ## Embeddings
 - `host.llm.embed(key, {texts, model?, kinds?})` in one pass; `embedResults[key]` and `embedInfo[key]` ({model, via}) arrive next pass. At most 8 per pass (`sandbox-worker.mjs`). `kinds` marks query or document text.
 - `embed` drops blank texts and cuts each text at 8000 characters; the runtime (`alignEmbeddings` in `src/embed-model-names.ts`) hands a plugin one entry per text, `null` for a blank one, so `texts[i]` pairs with `embedResults[key][i]`. `embedProvider` picks the source: "local" is the downloaded model only; the `OPENROUTER_PROVIDER_ID` value uses the fixed `OPENROUTER_EMBED_URL`; a connection id is that connection only; "auto" tries local file, local-server connections, keyed remote ones, then the fixed endpoint. Null means none answered; callers fall back to lexical search.
@@ -79,6 +86,7 @@ Verified at: molfar.vertep 5b6f37a
 - Embedding order or defaults: `embed` and `readEmbedSettings` in src/models.ts, and the PUT check in src/server/app.ts.
 - A provider wire: `buildProvider` in src/providers/custom.ts and the registration in src/models.ts. Keep `tolerantSseFetch` on custom connections.
 - Pacing: `DEFAULT_PACE` and the bounds in src/plugins/llm-pace.ts.
+- A new cache mode: `CACHE_MODES` in src/model-cache.ts, `ModelInfo.cache`, the PUT route, `CacheLifetime` in client/src/model-panel.tsx, and the "shell only" lists in test/security.test.ts and test/malicious-plugin.test.ts.
 
 ## Traps
 - `embed` drops blank texts before embedding, and `runPassRequests` returns the shorter list unchanged. A plugin can get fewer vectors than texts; check the length and align by position.

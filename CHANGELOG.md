@@ -7,6 +7,8 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+- **Cache lifetime per model, and keep-alive (#112).** Settings > Connections and models > a model > "Cache lifetime": "Provider's own" (as before), "Long" (asks the provider to keep the prompt cache for an hour with Claude, up to a day with GPT: no extra requests, but writing the cache costs more) and "Keep alive" (after a chat reply the engine sends a small request about every 5 minutes for up to 40 minutes, so a short cache does not lapse before your next message; it writes nothing to the chat). Keep-alive is off by default, needs the model's prices, is not used with thinking or tools, stops by itself when the provider does not read the cache, and the panel counts its requests. Until now the engine never asked for a long lifetime, so every pause over 5 minutes paid the whole prompt again on Claude.
+
 ## 1.16.5 (2026-11-15)
 
 - **A big backup zip no longer times out in a plugin that never reads it.** The archive travels inside the request body, and every route plugin of the app is asked in turn, so each one got a copy of the whole string in its sandbox call. A 70 MB library (a SillyTavern data folder) ran past the shared sandbox's 20 s in the first plugin (Roleplay's Agents), before the importer was asked, and the import ended with "sandbox call timed out" after its progress bar reached 100%. The archive is now taken out of the body handed to plugins (`bodyWithoutZip`); only a plugin with the `zip` permission gets it, through `host.zip`.

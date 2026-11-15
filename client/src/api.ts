@@ -62,6 +62,19 @@ export interface ModelDetails extends PickerModel {
   images?: boolean
   /** USD per million tokens (the user's first, then the catalog); null = unknown. */
   pricing: ModelPricing | null
+  /** How long the provider is asked to keep this model's prompt cache; absent = default. */
+  cache?: CacheMode
+}
+
+export type CacheMode = "default" | "long" | "keepalive"
+
+/** What keep-alive has done for one model since the engine started. */
+export interface KeepaliveStatus {
+  sent: number
+  lastAt: number | null
+  lastRead: number | null
+  active: number
+  stopped: string | null
 }
 
 /** A starred model in the quick-switch list, with an optional name of its own. */
@@ -92,6 +105,9 @@ export const modelsApi = {
   setPricing: (ref: string, pricing: ModelPricing | null) => api<{ ok: boolean }>("PUT", "/v1/models/pricing", { ref, pricing }),
   /** The same prompt twice, in turn: did the provider read the second one from its cache? */
   cacheCheck: (model: string) => api<CacheCheck>("POST", "/v1/models/cache-check", { model }),
+  /** How long this model's prompt cache is asked to live. keepalive needs a known price. */
+  setCache: (ref: string, mode: CacheMode) => api<{ ok: boolean; mode: CacheMode }>("PUT", "/v1/models/cache", { ref, mode }),
+  keepalive: (ref: string) => api<KeepaliveStatus>("GET", `/v1/models/keepalive?model=${encodeURIComponent(ref)}`),
 }
 
 export interface CacheCall {

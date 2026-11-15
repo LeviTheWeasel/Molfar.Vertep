@@ -17,7 +17,7 @@ The shell is the signed-in browser page in `client/src`. It shows a tab strip (t
 - `client/src/theme.ts` `applyTheme`: sets `data-color-scheme`, the inline colour variables and the three theme storage keys.
 - `client/src/i18n/index.ts` `tr`: string lookup, `{name}` interpolation and fallback.
 - `client/src/i18n/locales.ts` `LOCALES`: the list of shipped locales.
-- `client/src/model-panel.tsx` `ModelPanel`: one model's parameters, context, price and cache settings.
+- `client/src/model-panel.tsx` `ModelPanel`: one model's parameters, context, price and cache settings; `CacheLifetime` is the Provider's own / Long / Keep alive choice.
 - `client/src/local-embeddings.tsx` `LocalEmbeddings`: download and check of the local embedding model.
 - `client/src/updates-panel.tsx` `UpdatesDialog`: app and engine update list.
 - `client/src/app-update.tsx` `useAppUpdate`: per-app update state behind `AppUpdateBanner`.

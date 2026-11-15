@@ -1532,6 +1532,27 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
     return c.json({ ok: true, pricing: table });
   });
 
+  // how long a model's prompt cache is asked to live: default, long (1 hour) or keepalive (a tiny request
+  // after each chat reply keeps the short cache from lapsing). Shell only: it can spend money (#112)
+  app.put("/v1/models/cache", async (c) => {
+    const u = c.get("user");
+    const p = c.get("paths");
+    const body = await c.req.json<{ ref?: unknown; mode?: unknown }>().catch(() => ({}) as { ref?: unknown; mode?: unknown });
+    try {
+      const mode = await c.get("models").setCacheMode(body.ref as string, body.mode);
+      await git.commitAll(p.root, u.username, `models: cache ${String(body.ref)} = ${mode}`).catch(() => undefined);
+      bus.emit(u.username, "connections_changed", { id: String(body.ref) });
+      return c.json({ ok: true, mode });
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 400);
+    }
+  });
+  // what keep-alive has done for a model since the engine started: how many requests, what the last one read, why it stopped
+  app.get("/v1/models/keepalive", (c) => {
+    const ref = c.req.query("model") ?? "";
+    return c.json(c.get("models").keepaliveStatus(ref));
+  });
+
   // per-model parameters in blocks by caller (chat, plugins, plugin:<app>/<id>, molfar): what a model
   // is sent, whichever preset or app calls it (model-params.ts, CONNECTIONS-SPEC.md)
   app.get("/v1/models/params", (c) => c.json(readModelParams(c.get("paths").root)));
