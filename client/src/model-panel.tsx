@@ -8,7 +8,7 @@ import { Button, IconButton } from "./ui/button"
 import { Select } from "./ui/select"
 import { tr } from "./i18n/index"
 import { inputClass } from "./settings"
-import { listPlugins, modelParamsApi, modelsApi, type CacheCheck, type ModelDetails, type ModelParamsEntry, type ParamBlock } from "./api"
+import { listPlugins, modelParamsApi, modelsApi, type CacheCheck, type CacheMode, type KeepaliveStatus, type ModelDetails, type ModelParamsEntry, type ParamBlock } from "./api"
 
 type Key = keyof ParamBlock
 type Kind = "number" | "int" | "reasoning" | "tier" | "tags" | "json"
@@ -298,6 +298,7 @@ export function ModelPanel(props: { model: ModelDetails; onClose: () => void; on
       <ContextRow model={model} refName={ref} onChanged={props.onChanged} />
       <PriceRow model={model} refName={ref} onChanged={props.onChanged} />
       <CacheRow refName={ref} />
+      <CacheLifetime model={model} refName={ref} onChanged={props.onChanged} />
 
       <div className="flex flex-col gap-1 border-t border-line pt-3">
         <h4 className="text-12 font-medium text-ink">{tr("Parameters")}</h4>
@@ -605,6 +606,93 @@ function CacheRow(props: { refName: string }) {
           <span className="block text-11 text-ink-faint">{tr("Time: {a} s, then {b} s.", { a: sec(res.first.ms), b: sec(res.second.ms) })}</span>
         </div>
       ) : null}
+      {err ? <div className="text-11 text-danger">{err}</div> : null}
+    </div>
+  )
+}
+
+/** How long the provider keeps this model's prompt cache (#112): its own default, a longer one, or a small request after each chat reply that keeps the short one alive. */
+function CacheLifetime(props: { model: ModelDetails; refName: string; onChanged?: () => void }) {
+  const [mode, setMode] = useState<CacheMode>(props.model.cache ?? "default")
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState("")
+  const [status, setStatus] = useState<KeepaliveStatus | null>(null)
+  const priced = !!props.model.pricing
+  const longOk = props.model.cacheLong !== false
+  useEffect(() => {
+    setMode(props.model.cache ?? "default")
+  }, [props.model.cache, props.refName])
+  useEffect(() => {
+    setStatus(null)
+    if (mode !== "keepalive") return
+    let live = true
+    modelsApi.keepalive(props.refName).then((s) => live && setStatus(s)).catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [mode, props.refName])
+  const pick = async (next: CacheMode) => {
+    if (next === mode || busy) return
+    setBusy(true)
+    setErr("")
+    try {
+      await modelsApi.setCache(props.refName, next)
+      setMode(next)
+      props.onChanged?.()
+    } catch (e) {
+      setErr(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const options: { value: CacheMode; label: string; hint: string; off?: boolean }[] = [
+    { value: "default", label: tr("Provider's own"), hint: tr("The provider decides, usually about 5 minutes after the last request. Nothing extra is sent.") },
+    {
+      value: "long",
+      label: tr("Long"),
+      hint: longOk
+        ? tr("Asks the provider to keep the cache for an hour (Claude) or up to a day (GPT). No extra requests, but writing the cache costs more.")
+        : tr("Not available on this connection: the provider ignores it or refuses the request. Use Keep alive."),
+      off: !longOk && mode !== "long",
+    },
+    {
+      value: "keepalive",
+      label: tr("Keep alive"),
+      hint: priced
+        ? tr("After a chat reply, sends a small request about every 5 minutes for up to 40 minutes, so the cache does not lapse. Each costs about a tenth of the prompt's input price and counts against request limits and subscriptions. Not used with tools, or with thinking on Claude.")
+        : tr("Needs this model's prices: set them above first."),
+      off: !priced,
+    },
+  ]
+  return (
+    <div className="flex flex-col gap-1" data-testid="cache-lifetime">
+      <div className="text-12 text-ink-muted" id="cache-lifetime-label">{tr("Cache lifetime")}</div>
+      <div role="radiogroup" aria-labelledby="cache-lifetime-label" className="flex flex-col gap-1">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={mode === o.value}
+            disabled={busy || o.off}
+            className={cn("flex min-h-9 flex-col gap-0.5 rounded-md border px-2.5 py-1.5 text-left transition-colors max-sm:min-h-10", mode === o.value ? "border-line-focus bg-pressed" : "border-line hover:bg-hover", o.off && "opacity-60")}
+            onClick={() => void pick(o.value)}
+          >
+            <span className={cn("text-13", mode === o.value ? "font-medium text-ink" : "text-ink")}>{o.label}</span>
+            <span className={cn("text-11 leading-4", mode === o.value ? "text-ink-muted" : "text-ink-faint")}>{o.hint}</span>
+          </button>
+        ))}
+      </div>
+      {mode === "keepalive" && status ? (
+        <div role="status" className="text-11 text-ink-muted">
+          {status.sent
+            ? tr("{n} keep-alive requests since the engine started; the last one read {m} tokens from the cache.", { n: status.sent, m: status.lastRead ?? 0 })
+            : tr("No keep-alive request yet: it starts after the next chat reply.")}
+        </div>
+      ) : null}
+      {mode === "keepalive" && status?.stopped ? <div className="text-11 text-warning">{status.stopped}</div> : null}
+      {mode === "keepalive" && status?.skipped ? <div className="text-11 text-warning">{status.skipped}</div> : null}
+      {mode === "long" && !longOk ? <div className="text-11 text-warning">{tr("Not available on this connection: the provider ignores it or refuses the request. Use Keep alive.")}</div> : null}
       {err ? <div className="text-11 text-danger">{err}</div> : null}
     </div>
   )

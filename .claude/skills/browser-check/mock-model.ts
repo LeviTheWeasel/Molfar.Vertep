@@ -13,6 +13,8 @@
 // POST .../embeddings answers an embedding of 8 numbers made from the words of each text (texts that share words are near);
 // POST /__embed {"fail": true} makes it answer 500 until {"fail": false}, `delayMs` slows each answer, and GET /__embed counts the requests
 type Turn = ({ text: string } | { tool: string; args?: Record<string, unknown> }) & { delayMs?: number; wordMs?: number; drop?: boolean; dropTimes?: number; match?: string };
+// POST /__cache {"share": 0.6} makes every answer report that share of its prompt as read from the provider's cache (prompt_tokens_details.cached_tokens); 0 = no cache
+let cacheShare = 0;
 let refuseTools = false;
 const dropped = new Map<number, number>();
 const DEFAULT: Turn[] = [
@@ -41,6 +43,7 @@ Bun.serve({
     const url = new URL(req.url);
     if (url.pathname === "/__log") { if (req.method === "POST") { log.length = 0; return Response.json({ ok: true }); } return Response.json(log); }
     if (url.pathname === "/__refuse-tools") { if (req.method === "POST") refuseTools = Boolean(((await req.json()) as { on?: boolean }).on); return Response.json({ on: refuseTools }); }
+    if (url.pathname === "/__cache") { if (req.method === "POST") cacheShare = Math.min(0.95, Math.max(0, Number(((await req.json()) as { share?: number }).share) || 0)); return Response.json({ share: cacheShare }); }
     if (url.pathname === "/__reset") { next = 0; return Response.json({ ok: true }); }
     if (url.pathname === "/__turns") { turns = (await req.json()) as Turn[]; next = 0; return Response.json({ ok: true, turns: turns.length }); }
     if (url.pathname.endsWith("/models")) return Response.json({ data: [{ id: model }] });
@@ -69,7 +72,8 @@ Bun.serve({
     const enc = new TextEncoder();
     const chunk = (o: unknown) => enc.encode(`data: ${JSON.stringify(o)}\n\n`);
     const base = { id: `c${next}`, object: "chat.completion.chunk", created: 1, model };
-    const usage = { prompt_tokens: Math.ceil(raw.length / 4), completion_tokens: 20, total_tokens: Math.ceil(raw.length / 4) + 20 };
+    const prompt = Math.ceil(raw.length / 4);
+    const usage = { prompt_tokens: prompt, completion_tokens: 20, total_tokens: prompt + 20, ...(cacheShare > 0 ? { prompt_tokens_details: { cached_tokens: Math.floor(prompt * cacheShare) } } : {}) };
     if (turn.delayMs) await Bun.sleep(turn.delayMs);
     const body = new ReadableStream({
       async start(c) {
