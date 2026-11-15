@@ -1,5 +1,5 @@
 # Dashboard: the sensor pass, relations, the character journal, the clock
-Verified at: molfar.vertep-roleplay f66e0a9 (sections: Owners, What reaches the reply prompt, Traps); the rest at 1f0a99f
+Verified at: molfar.vertep-roleplay 92638da (parts); rest 1f0a99f
 
 ## What it does
 - After a reply, a sensor model call reads the new messages and returns one JSON report: present people, clock, scene, events, each character's mood, condition, outfit, holding and goal, what each learned, what was said or promised, threads (quests), journal lines and edges between people.
@@ -79,7 +79,7 @@ Verified at: molfar.vertep-roleplay f66e0a9 (sections: Owners, What reaches the 
 - Name helpers: `askSensor` depends on `expandNamesFor`, which has copies in other plugins (`docs/COUPLINGS.md`, helper names).
 
 ## Traps
-- A new constellation: `CONSTELLATIONS` (first match wins), `BOND_WORDS`, UI `CONSTELLATION_STATS`, `dash.const.*`/`dash.constLine.*`, the list in `test/rp-dashboard.test.ts`. The UI's four-step labels (`tierIndex`) differ from the eight prompt bands on purpose.
+- A new constellation: `CONSTELLATIONS` (first match wins), `BOND_WORDS`, UI `CONSTELLATION_STATS`, `dash.const.*`/`dash.constLine.*`, `test/rp-dashboard.test.ts`. `cfg.bond.inject` switches the line off. UI labels (`tierIndex`) have four steps, the prompt eight.
 - A non-JSON answer is not retried. Only a rate-limit error is.
 - A character missing from `present` for one turn used to lose their `Wearing:` ids in the next sensor input, and came back with duplicate garments (#409). The ids of absent characters are listed now; do not cut that line to save tokens.
 - The guards in `applyLedger` (`goneWhere`, `speaksOf`, `sameKindOfGarment`) read English item texts only. An item text in another language passes through as before.
@@ -89,12 +89,12 @@ Verified at: molfar.vertep-roleplay f66e0a9 (sections: Owners, What reaches the 
 - A clock time the report does not state is marked approximate. The day count only moves forward.
 - A new insert part without a row in `insertCeiling` overflows the window silently.
 - A user journal line always wins over a sensor line. No route writes user lines yet.
-- The comment above `journalPreviousLines` and `test/rp-dash-journal.test.ts` cited `docs/JOURNAL-HANDOFF.md`, a handoff file deleted in the commit that built the journal (03978ad). Both now point at `docs/DATA-FORMATS.md`, "The character journal" (Roleplay branch `claude/handbook-findings`, 0185b00).
 
 ## Tests that guard it
 - `test/rp-dashboard.test.ts`: partial JSON, a non-JSON answer keeps the old state, the insert in `llmRequest`.
 - `test/rp-dash-clock.test.ts`: `advanceClock` and the scene line of the insert.
 - `test/rp-dash-journal.test.ts`: `OUTPUT_SHAPE`, `llmRequest`, `journalBlock`.
+- `test/rp-dash-bond.test.ts`: bands, bond line, tails, the switch.
 - `test/rp-insert-ceiling.test.ts`: `insertCeiling` rows.
 - `test/rp-dash-things.test.ts`: item ids in the Previous state, `applyLedger` ("clothes do not pile up").
 ## Not verified
@@ -102,4 +102,3 @@ Verified at: molfar.vertep-roleplay f66e0a9 (sections: Owners, What reaches the 
 - The engine's reserve and fallback table for `insertCeiling`.
 - Swipe rollback has no test read here. `test/rp-quests.test.ts` and `test/rp-dash-said.test.ts` were not opened.
 - The UI loop in `src/lib/store.ts` that waits for `__llmPending`: the function holding it was not identified.
-- `test/rp-dash-journal-box.test.tsx` was not read.
