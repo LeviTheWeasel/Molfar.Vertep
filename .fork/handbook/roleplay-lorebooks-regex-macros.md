@@ -1,6 +1,5 @@
 # Lorebooks, regex scripts and macros
-Verified at: molfar.vertep-roleplay 4e0989b (sections: Owners, Traps); the rest at 91eec33
-Verified at: molfar.vertep-roleplay 56bf594
+Verified at: molfar.vertep-roleplay efead2b (sections: Owners, Lorebook entry, The scan, secret entries); Owners, Traps also 4e0989b; the rest at 56bf594
 
 ## What it does
 Lorebook entries enter the prompt by keys, by constant status, or by a vector match over a threshold. One server function runs the scan, budget and placement. Regex scripts rewrite text on save, on edit, in the prompt, or only for display. Macros are expanded on the server. The browser shows why each entry fired and runs a keyword test through the same scanner.
@@ -12,6 +11,7 @@ Lorebook entries enter the prompt by keys, by constant status, or by a vector ma
 - `plugins/engine/plugin.js` `wiVectorHits`: which vectorized entries the scan vector lets in.
 - `plugins/engine/plugin.js` `wiBudgetChars`: the character budget from the preset.
 - `plugins/engine/plugin.js` `wiFilterInclusionGroups`: one winner per group.
+- `plugins/engine/plugin.js` `secretOf`, `secretView`, `loreKnowers`, `presenceOfLine`, `loreContext`, `cardNameSet`, route `lore-known`: secret entries (#416).
 - `plugins/engine/plugin.js` `semanticEmbedWork`: which vectors still need embedding.
 - `plugins/engine/plugin.js` `worldBookOf`: the chat's own world book.
 - `plugins/engine/plugin.js` `recordFired`: writes the "what fired" log.
@@ -35,7 +35,7 @@ Fields the scan reads (book shape in `docs/DATA-FORMATS.md`, "Lorebooks"):
 - `keys`, `secondaryKeys`, `selectiveLogic`, `keysRegex`. A key written as `/pattern/flags` is a pattern.
 - `status`: `normal`, `constant` or `vectorized`. The `constant` boolean is a legacy mirror.
 - `content`, `enabled`, `order` (default 100), `position`, `depth`, `role`.
-- `probability`, `group`, `groupWeight`, `groupPrioritize`, `groupOverride`, `sticky`, `cooldown`, `delay`, `delayUntilRecursion`, `nonRecursable`, `preventFurtherRecursion`, `ignoreBudget`, `matchSources`, and the character and trigger filters.
+- `probability`, `group`, `groupWeight`, `groupPrioritize`, `groupOverride`, `sticky`, `cooldown`, `delay`, `delayUntilRecursion`, `nonRecursable`, `preventFurtherRecursion`, `ignoreBudget`, `matchSources`, the character and trigger filters, and `secret` (`{knownBy, cover, reveal}`, #416).
 - Book: `settings` (`scanDepth`, `contextPercent`, `budgetCap`, `minActivations`, `maxRecursion`, `recursiveScan`, `includeNames`, `insertionStrategy`) and `vectorized` (`topK`, `thresholdMode`, `scoreThreshold`).
 
 ## The scan, step by step
@@ -45,7 +45,7 @@ Fields the scan reads (book shape in `docs/DATA-FORMATS.md`, "Lorebooks"):
 4. Scanned text: the last `scanDepth` messages that are not system and not hidden (`windowOf`). `includeNames` adds "Name: ". The pending user text and the author's note (when `includeInWIScan` is set) join in `assemble`.
 5. Entries sort by `order` per book. Disabled entries drop out. Each gets the id `bookId#uid`.
 6. `wiVectorHits`: with 4 or more vectors the threshold is the mean plus the larger of 2 standard deviations and 0.10, never below 0.25. A smaller pool uses 0.55. `thresholdMode: "fixed"` uses `scoreThreshold`. At most `topK` (default 10) per book.
-7. Holds, per entry: trigger and speaker filters (`filterOut`), `delay`, `cooldown`, `delayUntilRecursion`, `nonRecursable`. Held entries go to `blocked` with a reason.
+7. Holds, per entry: trigger and speaker filters (`filterOut`), a secret the one speaker does not know with no cover (reason `secret`), `delay`, `cooldown`, `delayUntilRecursion`, `nonRecursable`. Held entries go to `blocked` with a reason.
 8. A vector hit skips primary keys, and only secondary keys still decide. Otherwise `matchEntry` runs `wiEntryMatch` on the window, plus any `matchSources` text.
 9. Probability is rolled once per entry per activation (`rolledOut`). Dry runs never roll. Sticky entries skip the roll.
 10. After each pass, `wiFilterInclusionGroups` keeps one winner per group.
@@ -54,6 +54,8 @@ Fields the scan reads (book shape in `docs/DATA-FORMATS.md`, "Lorebooks"):
 13. `sticky` and `cooldown` state lives in `meta.wiTimed`. Dry runs leave it alone.
 14. Budget: entries sort by strategy rank, then `order` descending. Those past the budget go to `skipped`, unless `ignoreBudget` is set.
 15. Placement: admitted entries sort by rank, then `order` ascending. `WI_POSITIONS` maps `position` to a result list; `at_depth` goes to `depth`.
+
+Secret entries: each item gets `secretV` once per scan (known: content; cover; marked: content plus a "[Secret: only A knows...]" line for several voices). `contentOf` feeds the prompt, the budget and recursion. Knowers come from the chat each scan: `knownBy`, a `reveal` word in a message (taught to its author and the Dashboard's `present`), `lore-known/<chat>.json` by hand.
 
 ## Regex scripts
 - Storage: one file per script at `regex/<id>.json`, read by `loadRegexScripts`. Scope: `global`, `preset`, `chat` or `character`. Placements: `user_input`, `ai_output`, `slash`, `wi`, `reasoning`.
