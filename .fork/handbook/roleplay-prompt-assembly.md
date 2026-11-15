@@ -1,6 +1,6 @@
 # Prompt assembly for a Roleplay reply, and the prompt inspector
 
-Verified at: molfar.vertep-roleplay 91eec33, molfar.vertep 8310b23
+Verified at: molfar.vertep-roleplay 4.127.0 (branch claude/cache-keepalive-112), molfar.vertep 4004846 + cache branch
 
 ## What it does
 - The engine plugin's `assemble` builds a reply's messages from the preset, card, persona, lorebooks, regex, macros and history. It also returns `sources`, which records where each part came from.
@@ -24,7 +24,7 @@ Verified at: molfar.vertep-roleplay 91eec33, molfar.vertep 8310b23
 - roleplay: `plugins/world/plugin.js` `llmRequest`: World DM, dice, pace, life; `withLast` joins them to the newest user message.
 - roleplay: `plugins/agents/plugin.js` `llmRequest`: agent hints; `withLastUser` joins them the same way.
 - roleplay: `src/lib/engine.ts` `promptPreview`: client call for the peek.
-- roleplay: `src/components/chat/prompt-peek-dialog.tsx` `PromptPeekDialog`; `src/components/chat/prompt-sources.tsx` `PromptSourcesPanel`, `MarkedPre`; `src/lib/tokens.ts` `estimateTokens` (BPE count, peek only).
+- roleplay: `src/components/chat/prompt-peek-dialog.tsx` `PromptPeekDialog` (opened from the Request size popup with a `cache` prop, it marks where the provider's cache ends: `src/lib/cache-boundary.ts` `cacheBoundary`, `blockStates`, `partStates`; `src/components/chat/request-cache.tsx` is the popup's cache section); `src/components/chat/prompt-sources.tsx` `PromptSourcesPanel`, `MarkedPre`; `src/lib/tokens.ts` `estimateTokens` (BPE count, peek only).
 - engine: `src/inspector.ts` `inspectRequest`: records a request with its sources and estimate; `listInspected`, `getInspected`, `clearInspected`.
 - engine: `src/prompt-sources.ts` `locateSources`: finds each part's text; `hookInsertions` labels what a hook added.
 - engine: `src/plugins/runtime.ts` `applyLlmRequestHooks`: runs sibling hooks and keeps allowlisted fields; `collectSiblingLlmHooks` picks them.

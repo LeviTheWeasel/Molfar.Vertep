@@ -292,6 +292,10 @@ describe("exfiltration ways out of an app page", () => {
     // checking a model's cache spends the user's tokens: the shell's button only, never an app
     expect(host.allowedRequest("roleplay", "POST", "/v1/models/cache-check")).toBe(false);
     expect(host.allowedRequest("roleplay", "POST", "/v1/models/cache-check", true)).toBe(false);
+    // the cache setting can start requests of its own (keep-alive): the shell's panel only, never an app
+    // (reading the keep-alive counts is a GET under /v1/models/, open to apps like the rest of that list)
+    expect(host.allowedRequest("roleplay", "PUT", "/v1/models/cache")).toBe(false);
+    expect(host.allowedRequest("roleplay", "PUT", "/v1/models/cache", true)).toBe(false);
   });
 
   it("the bridge bus filter drops agent, other-app and cross-app events", async () => {

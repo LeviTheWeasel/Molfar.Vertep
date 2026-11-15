@@ -49,7 +49,7 @@ let browser
  *  theme: the agent page reads localStorage["molfar-theme"], not the OS. */
 export async function open({ path = "/agent/", width = 1280, height = 800, theme = "dark", lang } = {}) {
   browser ??= await chromium.launch({ executablePath: chromePath() })
-  const page = await browser.newPage({ viewport: { width, height } })
+  const page = await browser.newPage({ viewport: { width, height }, ...(lang ? { locale: lang } : {}) })
   page.on("pageerror", (e) => console.log("PAGEERROR", e.message))
   await page.goto(ENGINE_URL + "/")
   await page.evaluate(async ({ theme, model, lang }) => {
