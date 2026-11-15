@@ -1,5 +1,5 @@
 # Dashboard: the sensor pass, relations, the character journal, the clock
-Verified at: molfar.vertep-roleplay 1f0a99f
+Verified at: molfar.vertep-roleplay f66e0a9 (sections: Owners, What reaches the reply prompt, Traps); the rest at 1f0a99f
 
 ## What it does
 - After a reply, a sensor model call reads the new messages and returns one JSON report: present people, clock, scene, events, each character's mood, condition, outfit, holding and goal, what each learned, what was said or promised, threads (quests), journal lines and edges between people.
@@ -23,6 +23,7 @@ Verified at: molfar.vertep-roleplay 1f0a99f
 - `plugins/relations/plugin.js` `charEntry`: one character's stats, mood, condition, outfit and holding ledger, and thought.
 - `plugins/relations/plugin.js` `previousStateText`: the sensor's Previous state; item ids for present characters and for up to `AWAY_LISTED` (3) characters out of the scene.
 - `plugins/relations/plugin.js` `applyLedger`: applies `see` and `off` to the worn and held items; `goneWhere` turns a "left behind" text on a listed id into an `off`, `sameKindOfGarment` joins an id-less garment to the one listed item of its kind.
+- `plugins/relations/plugin.js` `bondLine` `trendTails` `bandOf`: the bond line for the reply model (`BOND_WORDS`), tails for moving feelings, the eight phrase bands.
 - `plugins/relations/plugin.js` `applyNotebook`: what each character saw, heard or guessed.
 - `plugins/relations/plugin.js` `applySaid`: vows, promises, threats and similar lines, limited per turn.
 - `plugins/relations/plugin.js` `applyThreads`: quests (main, side, everyday) and their steps.
@@ -63,7 +64,7 @@ Verified at: molfar.vertep-roleplay 1f0a99f
 9. A swipe rolls back by reading the snapshot before its target. Later snapshots are dropped with `dropSnapshot` and read again from the last one that stands.
 
 ## What reaches the reply prompt
-- "Relationship dashboard": the scene line, one block per focused character (the speaker, or up to `FULL_FOCUS` (3) in a group or narrator chat), notebook lines, layout, edges, an "Also present" line, open threads (main quests first, with steps) and a closing line. Words only.
+- "Relationship dashboard": the scene line, a "Bond with <user>" line (the constellation plus up to two tails) before each block's five feelings, one block per focused character (the speaker, or up to `FULL_FOCUS` (3) in a group or narrator chat), notebook lines, layout, edges, an "Also present" line, open threads (main quests first, with steps) and a closing line. Words only.
 - "Dashboard · journal": `journalBlock` for each focused character whose notebook may show. The thought appears only while fresh (`thoughtTurns`, default 3). People lines are cut to `journal.maxTokens` (40 to 400).
 - "Dashboard · said": a fixed room of `SAID_TOKENS` (120).
 - "Dashboard · note", "reminder" and "fast sensor" appear only with a nudge or fast mode.
@@ -78,6 +79,7 @@ Verified at: molfar.vertep-roleplay 1f0a99f
 - Name helpers: `askSensor` depends on `expandNamesFor`, which has copies in other plugins (`docs/COUPLINGS.md`, helper names).
 
 ## Traps
+- A new constellation: `CONSTELLATIONS` (first match wins), `BOND_WORDS`, UI `CONSTELLATION_STATS`, `dash.const.*`/`dash.constLine.*`, the list in `test/rp-dashboard.test.ts`. The UI's four-step labels (`tierIndex`) differ from the eight prompt bands on purpose.
 - A non-JSON answer is not retried. Only a rate-limit error is.
 - A character missing from `present` for one turn used to lose their `Wearing:` ids in the next sensor input, and came back with duplicate garments (#409). The ids of absent characters are listed now; do not cut that line to save tokens.
 - The guards in `applyLedger` (`goneWhere`, `speaksOf`, `sameKindOfGarment`) read English item texts only. An item text in another language passes through as before.

@@ -15,6 +15,7 @@ Change X, touch Y:
 - Name helpers: `askSensor` depends on `expandNamesFor`, which has copies in other plugins (`docs/COUPLINGS.md`, helper names).
 
 Traps:
+- A new constellation: `CONSTELLATIONS` (first match wins), `BOND_WORDS`, UI `CONSTELLATION_STATS`, `dash.const.*`/`dash.constLine.*`, the list in `test/rp-dashboard.test.ts`. The UI's four-step labels (`tierIndex`) differ from the eight prompt bands on purpose.
 - A non-JSON answer is not retried. Only a rate-limit error is.
 - A character missing from `present` for one turn used to lose their `Wearing:` ids in the next sensor input, and came back with duplicate garments (#409). The ids of absent characters are listed now; do not cut that line to save tokens.
 - The guards in `applyLedger` (`goneWhere`, `speaksOf`, `sameKindOfGarment`) read English item texts only. An item text in another language passes through as before.
