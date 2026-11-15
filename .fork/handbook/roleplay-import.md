@@ -1,5 +1,5 @@
 # Import: character cards, chats, lorebooks, and a whole library from another app
-Verified at: molfar.vertep-roleplay 607147f
+Verified at: molfar.vertep-roleplay 586f601 plus the zip-sprites change
 
 ## What it does
 - A character card (PNG, charx or JSON) is read in the browser and posted in batches of 25 to the studio-import plugin, which writes `characters/<id>/card.json` with any embedded lorebook, regex scripts and pictures.
@@ -19,6 +19,9 @@ Verified at: molfar.vertep-roleplay 607147f
 - `plugins/studio-import/plugin.js` `handleRoute`: all import routes, the zip phase order and the summary.
 - `plugins/studio-import/plugin.js` `writeChat`: writes a chat transcript and its meta.
 - `plugins/litopys/plugin.js` `previewImport` and `importChat`: a chat's candidates for card memory, and the write.
+- `src/lib/backup-assets.ts` `importBackupFile`: the browser side of Backup zip: puts the zip's pictures back, takes the sprite folders out, cuts the zip into parts and posts them one by one.
+- `src/lib/backup-assets.ts` `splitLibrary`: drops media the plugin does not read, orders cards, then the rest, then chats (with sidecars), and packs parts of `PART_BUDGET` (18 MB).
+- `src/lib/backup-assets.ts` `extractSprites`: `characters/<Name>/<emotion>.<img>` into the asset store; the plugin gets `body.sprites`.
 - `src/lib/import-progress.ts` `beginImport`: job store, units, steps and cancel.
 - `src/components/shell/import-progress-card.tsx` `ImportProgressCard`: the card on screen.
 
@@ -54,6 +57,11 @@ Dropped or left out:
 6. Chats are `chats/<folder>/<file>.jsonl`. The folder is matched to a card name, else to a group. The `.meta.json` sidecar restores title, preset, persona and lorebooks by name. `.memories.json` restores the old vault list.
 7. Settings: only the `ui` object of settings.json is restored, never the model. library.json is merged last.
 8. The result is a summary of arrays (characters, groups, lorebooks, presets, regex, personas, themes, chats, databank) plus errors and notes. The settings screen reports "N skipped". The job card lists failed files.
+
+Sprites and big libraries (the app bridge refuses a request body over 32 MB):
+- The browser takes `characters/<Name>/<emotion>.png` out of the zip, stores each picture (`storeEmotions`) and sends `sprites: { <folder>: { <emotion>: <url> } }` beside the part whose card file carries the folder's name, else the first part. The plugin attaches them to the card of that name written by that request, else to the card whose file base name is the folder (`idByFileBase`), as `studio.expressions`; a name the card already has is kept. A folder with no card gets a note.
+- A zip that is not small goes in parts of about 18 MB, in the order cards, the rest (books, presets, personas, settings: one part), chats with their `.meta.json` and `.memories.json`. The plugin's name maps (`bookIdByName` and the like) do not survive between parts: `diskIdOf` finds an earlier part's preset, persona or book by name on disk.
+- A chat over about 3 MB cannot be written (`fs.write` caps a file at 4 MB) and is listed in `errors`; over 16 MB it arrives as a binary and is listed too.
 
 Skipped silently:
 - Pictures outside characters/ that are not at the root.
@@ -92,6 +100,7 @@ Skipped silently:
 - Card regex scripts are stored twice.
 - A chat without a sidecar lands on preset `default` and the settings persona.
 - The chat-memory `dup` flag is a mark only; it does not block selection.
+- A library zip with a sprite folder but no card of that name in the same import leaves the sprites unattached (a note says so); the pictures stay in the asset store.
 
 ## Tests that guard it
 - `test/rp-card-png.test.ts`: non-ASCII text, v3 over v2, null for no card or truncated stream.
@@ -100,7 +109,8 @@ Skipped silently:
 - `test/rp-import-progress.test.ts`: progress fraction, units, cancel between units, failed files.
 - `test/rp-preset-import-regex.test.ts`: imported preset regex, and the (2), (3) names.
 - `test/rp-backup-assets.test.ts`: pictures in a backup.
-- No test in `test/` calls `/import/zip` for the library import.
+- `test/rp-backup-assets.test.ts`: `extractSprites` and `splitLibrary`. `test/rp-studio.test.ts`: sprites attached by card name and by file name, and the note for sprites that reach the plugin.
+- The tests call `/import/zip` with a mocked `host.zip`; none runs a real library through the browser (a 71 MB and a 53 MB one were run by hand on a test engine).
 
 ## Not verified
 - The size cap on `/import/zip` and how `host.zip` reads entries.

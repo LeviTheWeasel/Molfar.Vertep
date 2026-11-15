@@ -405,6 +405,28 @@ describe("S5 zip hardening", () => {
     expect(process.memoryUsage().heapUsed).toBeLessThan(2 * 1024 * 1024 * 1024);
   }, { timeout: 60_000 });
 
+  it("a text file of several MB comes back as text (a long chat transcript), a binary of that size as base64", async () => {
+    const { zipSync } = await import("fflate");
+    const { sandbox } = await import("../src/plugins/sandbox.js");
+    const line = `${JSON.stringify({ name: "A", mes: "x".repeat(990) })}\n`;
+    const chat = strToU8(line.repeat(4000)); // about 4 MB
+    const zip = Buffer.from(zipSync({ "chats/A/long.jsonl": chat, "pics/a.png": new Uint8Array(3 * 1024 * 1024).fill(7) }, { level: 0 })).toString("base64");
+    const r = await sandbox.eval({
+      source: `export function onTick(_ctx, host){ const e = host.zip.entries(); const c = e["chats/A/long.jsonl"], p = e["pics/a.png"]; return { chat: typeof c === "string" ? c.length : typeof c, png: p && p.__b64__ === true }; }`,
+      hook: "onTick",
+      ctx: {},
+      storeSnapshot: {},
+      storeAllowed: false,
+      llmAllowed: false,
+      zipAllowed: true,
+      zipBase64: zip,
+      memoryLimitBytes: 512 * 1024 * 1024,
+    });
+    expect(r.ok).toBe(true);
+    expect((r.out as { chat: number; png: boolean }).chat).toBe(chat.length);
+    expect((r.out as { png: boolean }).png).toBe(true);
+  }, { timeout: 60_000 });
+
   it("zip entry name traversal entries are dropped (zip-slip)", async () => {
     const { zipSync } = await import("fflate");
     const { sandbox } = await import("../src/plugins/sandbox.js");

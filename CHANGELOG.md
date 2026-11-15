@@ -7,7 +7,10 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
-- **A big backup zip imports again (Roleplay Import, Backup zip).** The zip travels inside the request body, and every route plugin of the app is asked in turn, so each one received a copy of the whole archive in its sandbox call. A library of about 70 MB (a SillyTavern data folder) timed out after 20 s in the first plugin that never reads it, and the import ended with "sandbox call timed out" after the progress bar reached 100%. The engine now takes the archive out of the body it hands to plugins; only a plugin with the `zip` permission gets it, through `host.zip`.
+## 1.16.5 (2026-11-15)
+
+- **A big backup zip no longer times out in a plugin that never reads it.** The archive travels inside the request body, and every route plugin of the app is asked in turn, so each one got a copy of the whole string in its sandbox call. A 70 MB library (a SillyTavern data folder) ran past the shared sandbox's 20 s in the first plugin (Roleplay's Agents), before the importer was asked, and the import ended with "sandbox call timed out" after its progress bar reached 100%. The archive is now taken out of the body handed to plugins (`bodyWithoutZip`); only a plugin with the `zip` permission gets it, through `host.zip`.
+- **Plugins read a long text file of a zip as text up to 16 MB** (it was 2 MB; a larger one arrived as base64 and the importers skipped it without a word). A chat transcript of 2 to 3 MB now imports; the importer still cannot write a chat file over 4 MB.
 
 ## 1.16.4 (2026-11-12)
 
