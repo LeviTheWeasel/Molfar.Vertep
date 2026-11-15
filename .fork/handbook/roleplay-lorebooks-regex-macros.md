@@ -1,5 +1,5 @@
 # Lorebooks, regex scripts and macros
-
+Verified at: molfar.vertep-roleplay 4e0989b (sections: Owners, Traps); the rest at 91eec33
 Verified at: molfar.vertep-roleplay 56bf594
 
 ## What it does
@@ -15,6 +15,7 @@ Lorebook entries enter the prompt by keys, by constant status, or by a vector ma
 - `plugins/engine/plugin.js` `semanticEmbedWork`: which vectors still need embedding.
 - `plugins/engine/plugin.js` `worldBookOf`: the chat's own world book.
 - `plugins/engine/plugin.js` `recordFired`: writes the "what fired" log.
+- `plugins/engine/plugin.js` `chatBookReport`: `GET /fired-books`, the chat's books against that log (never fired) and against the entry vectors.
 - `plugins/engine/plugin.js` `runRegexScripts`: scope, placement, stage and depth gates.
 - `plugins/engine/plugin.js` `applyRegexScript`: the replacement, with size guards.
 - `plugins/engine/plugin.js` `expandMacros`: macro replacement; `expandIfBlocks` handles `{{#if}}`.
@@ -76,6 +77,7 @@ Fields the scan reads (book shape in `docs/DATA-FORMATS.md`, "Lorebooks"):
 ## If you change X, also touch Y
 - A lorebook field: `docs/DATA-FORMATS.md` ("Lorebooks"), `src/lib/types.ts`, `lorebookToEngine`, `normalizeBook` (`docs/COUPLINGS.md`).
 - Scan rules: `activateWorldInfo` and its `dryRun` guards, the labels in `blockedText`, and the `recordFired` shape (`docs/DATA-FORMATS.md`, "What fired").
+- `chatBookReport` builds the "never" key as `recordFired` writes it (`<bookId>:<uid ?? title>`). The log keeps 300 entries, so a full log (`capped`) only hints at "never".
 - Vectors: keep the cache local (`.cache/lorebooks`) and the model tag `m`. Embed calls must send `kinds` (`docs/COUPLINGS.md`).
 - Regex stages: `runRegexScripts` and `resolveDisplayScripts`. The 500-character cap is in the engine and in `MAX_PATTERN`; keep them equal.
 - Macros: `expandMacros` and `subMacros` in `WORKER_SRC`.

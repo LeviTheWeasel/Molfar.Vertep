@@ -1,5 +1,5 @@
 # Litopys: story memory, who knows what, and the What fired record
-Verified at: molfar.vertep-roleplay 91eec33
+Verified at: molfar.vertep-roleplay 4e0989b (section: Owners); the rest at 91eec33
 
 ## What it does
 - Litopys keeps one record per chat: chapters (one per closed scene), arcs (older chapters merged), and facts, each with the people who know it. A background worker writes it; the reply hook only reads it.
@@ -26,6 +26,7 @@ Verified at: molfar.vertep-roleplay 91eec33
 - `plugins/litopys/plugin.js` `firedRoute`, `traceRoute`: serve GET /litopys/fired and the reply trace.
 - `plugins/litopys/plugin.js` `vectorGaps`, `vectorOf`, `kickEmbedWant`: embedding gaps, lookup, request.
 - `src/lib/fired-load.ts` `/litopys/fired`: client read of the counter.
+- `plugins/litopys/plugin.js` `applyHabits` `repeatsCardText`: earns chat habits from the worker's list; drops one that restates the card or a book (`worker.habits` counts offered, kept, repeats, over the limit); the worker sees the card's accepted habits as "Already on the card" (`buildWorkerRequest`).
 
 ## Data
 Per chat unless noted.
