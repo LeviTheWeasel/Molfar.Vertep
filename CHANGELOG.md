@@ -7,6 +7,11 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+- **Updates dialog, apps with no update source (#318).** An app made on this device or copied in by hand now gets a quiet row too ("No update source", with a reason), next to the apps installed from a zip, so "where is my app" has an answer there.
+- **The engine row's warning about apps names the right thing (#318).** It said an app "needs a different version of Molfar Vertep" and "may stop working after the update", but the app's `engine` range is checked against the app contract, not the release, and the apps named already failed today. It now says "app contract", shows the contract this engine supports, and lists only your own apps (it scanned every account's).
+- **An app whose `engine` range this engine cannot satisfy is refused at install (#318).** A Git or Store install and a zip import stop with a message saying which contract the app asks for and which this engine has; before, the mistake (a release number such as `>=1.12.0` written there) showed only at the app's first update.
+- **The build-failed card tells a first build from a later one (#337).** When no build of an app has ever finished, the card and the app's own window say the first build failed and there is nothing to show yet, instead of "the app shows its last good build".
+
 ## 1.16.5 (2026-11-15)
 
 - **A big backup zip no longer times out in a plugin that never reads it.** The archive travels inside the request body, and every route plugin of the app is asked in turn, so each one got a copy of the whole string in its sandbox call. A 70 MB library (a SillyTavern data folder) ran past the shared sandbox's 20 s in the first plugin (Roleplay's Agents), before the importer was asked, and the import ended with "sandbox call timed out" after its progress bar reached 100%. The archive is now taken out of the body handed to plugins (`bodyWithoutZip`); only a plugin with the `zip` permission gets it, through `host.zip`.

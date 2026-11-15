@@ -426,6 +426,8 @@ export interface BuildStatusFile {
    *  carry stale results (an error the new builder would catch), so both
    *  /build/status and app_check treat a mismatch as not built. */
   builder?: string;
+  /** A build of this app has finished with no errors at some point (so "the last good build" exists). Absent in a status an older engine wrote. */
+  everClean?: boolean;
 }
 
 const STATUS = ".molfar-build.json";
@@ -645,8 +647,10 @@ function copyPublic(root: string, dest: string): void {
   walk(pub, "");
 }
 
-function writeStatus(distDir: string, out: BuilderOutput, rev: string, builder?: string): void {
-  const status: BuildStatusFile = { rev, ok: out.ok, mode: out.mode, errors: out.errors, warnings: out.warnings.length, at: Date.now(), ...(builder ? { builder } : {}) };
+function writeStatus(distDir: string, out: BuilderOutput, rev: string, builder?: string, prior?: BuildStatusFile | null): void {
+  // a development build with errors still writes a page (the broken module is an error stub), so "dist exists" does not say a good build ever did
+  const everClean = (out.ok && out.errors.length === 0) || prior?.everClean === true;
+  const status: BuildStatusFile = { rev, ok: out.ok, mode: out.mode, errors: out.errors, warnings: out.warnings.length, at: Date.now(), ...(builder ? { builder } : {}), everClean };
   fs.mkdirSync(distDir, { recursive: true });
   fs.writeFileSync(path.join(distDir, STATUS), JSON.stringify(status));
 }
@@ -688,13 +692,14 @@ export function writeOutput(appsDir: string, id: string, out: BuilderOutput, rev
 function writeOutputNow(appsDir: string, id: string, out: BuilderOutput, rev: string, builder?: string): void {
   const root = appRoot(appsDir, id);
   const dist = path.join(root, "dist");
+  const prior = readBuildStatus(root);
   // the module graph carries the source hashes of this build, taken here
   // from the sources the build started on
   if (out.ok && out.mode === "development") {
     out = { ...out, files: out.files.map((f) => (f.path === GRAPH ? { ...f, contents: stampGraph(root, rev, f.contents) } : f)) };
   }
   if (!out.ok) {
-    writeStatus(dist, out, rev, builder);
+    writeStatus(dist, out, rev, builder, prior);
     return;
   }
   if (!out.full) {
@@ -705,7 +710,7 @@ function writeOutputNow(appsDir: string, id: string, out: BuilderOutput, rev: st
     }
     for (const c of out.copies) copyInto(root, c.from, path.join(dist, ...c.to.split("/")));
     for (const r of out.remove ?? []) fs.rmSync(path.join(dist, ...r.split("/")), { force: true });
-    writeStatus(dist, out, rev, builder);
+    writeStatus(dist, out, rev, builder, prior);
     return;
   }
   const stamp = `${Date.now().toString(36)}${crypto.randomBytes(3).toString("hex")}`;
@@ -732,7 +737,7 @@ function writeOutputNow(appsDir: string, id: string, out: BuilderOutput, rev: st
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.writeFileSync(dest, f.contents);
     }
-    writeStatus(staging, out, rev, builder);
+    writeStatus(staging, out, rev, builder, prior);
     if (fs.existsSync(dist)) fs.renameSync(dist, old);
     fs.renameSync(staging, dist);
   } finally {

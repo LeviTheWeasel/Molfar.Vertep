@@ -1258,7 +1258,7 @@ function BuildErrors(props: { status: AppBuildStatus; onClose: () => void; onAsk
   return (
     <div className="absolute inset-x-2 top-2 max-h-[45%] overflow-auto rounded-md border border-line bg-base p-3 font-mono text-12 text-ink shadow-[var(--s-raised)]">
       <div className="mb-1 flex items-center gap-2 font-sans text-12 text-ink-muted">
-        <span>{tr("Build failed. The app shows its last good build")}</span>
+        <span>{props.status.built === false ? tr("The first build of this app failed, so there is nothing to show yet") : tr("Build failed. The app shows its last good build")}</span>
         <button className="ml-auto rounded px-1.5 py-0.5 hover:bg-hover hover:text-ink" onClick={() => props.onAskAgent(lines.join("\n\n"))}>
           {tr("Ask Molfar")}
         </button>

@@ -38,7 +38,7 @@ An official app, such as Social, can tell Molfar Vertep that something is waitin
 
 ## Updates
 
-The download icon in the top bar gets a dot when something is waiting. It lists every app with an update source and has "Check now". An app that was installed from a file (a zip) shows "No update source": it cannot be updated here. To get updates, install it from the Store; that copy is a separate app, so export the file one first if it holds data you want to keep (the trash icon deletes an app and its data). "Update all" appears when two or more apps wait, and never includes Molfar Vertep itself.
+The download icon in the top bar gets a dot when something is waiting. It lists every app and has "Check now". An app with no update source shows "No update source" and a short reason. One installed from a file (a zip) cannot be updated here: to get updates, install it from the Store; that copy is a separate app, so export the file one first if it holds data you want to keep (the trash icon deletes an app and its data). One made on this device (by Molfar, say) or copied in by hand has nothing to update from at all. Installing an app whose `engine` range names an app contract this engine does not have (a Molfar Vertep release number written there by mistake counts) is refused with a message saying so; the Updates dialog's engine row names installed apps that already do not fit. "Update all" appears when two or more apps wait, and never includes Molfar Vertep itself.
 
 Your own edits are merged into an update, and your data is kept. Where your edits overlap with the new version, nothing changes yet: you choose "Keep mine", "Take update" or "Ask Molfar to merge". An update that installs new packages or asks for new permissions waits for your OK.
 

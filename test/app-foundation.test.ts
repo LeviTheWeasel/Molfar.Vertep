@@ -417,8 +417,10 @@ afterEach(() => {
     const failed = { ...output, ok: false, files: [], errors: [{ text: "Expected \";\"", file: "src/app.tsx", line: 3 }] };
     expect((await put("tabaaaaaaaa1", failed)).status).toBe(200);
     expect(await (await app.request("/app/alice/notes/")).text()).toContain("FROM-BUILDER");
-    const bad = (await (await app.request(base, { headers: h() })).json()) as { status: { ok: boolean; errors: Array<{ file: string }> } };
+    const bad = (await (await app.request(base, { headers: h() })).json()) as { built: boolean; status: { ok: boolean; errors: Array<{ file: string }> } };
     expect(bad.status.ok).toBe(false);
+    // a clean build landed before, so "the last good build" is real (#337)
+    expect(bad.built).toBe(true);
     expect(bad.status.errors[0]!.file).toBe("src/app.tsx");
     fs.rmSync(path.join(dataDir, "users", "alice", "apps", "notes", "dist"), { recursive: true, force: true });
     await lease("tabaaaaaaaa1");

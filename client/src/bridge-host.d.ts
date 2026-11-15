@@ -34,6 +34,8 @@ declare global {
     phase: "checking" | "building" | "ready" | "error" | "waiting";
     message?: string;
     errors?: Array<{ text: string; file?: string; line?: number; column?: number; lineText?: string }>;
+    /** on an error: false when no build of the app ever finished */
+    built?: boolean;
   }
 }
 

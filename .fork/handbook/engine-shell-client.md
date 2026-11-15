@@ -1,5 +1,5 @@
 # Engine shell client: screens, settings, languages, themes, app framing
-Verified at: molfar.vertep 32fc4f6
+Verified at: molfar.vertep 32fc4f6 (the updates-panel and BuildErrors lines read at 2c6d4d0)
 
 ## What it does
 The shell is the signed-in browser page in `client/src`. It shows a tab strip (the Molfar agent page, app tabs, new-tab launch screens) and hosts each app in a sandboxed iframe. `Shell` mounts the Settings dialog, the update dialogs, the bug report and the install dialog; the launch screen mounts the Store. UI preferences (theme, language, tab strip, split size) live in the browser's localStorage through `prefs`, not on the server. The agent page is a separate app in `client-agent/` with no i18n folder.
@@ -19,7 +19,8 @@ The shell is the signed-in browser page in `client/src`. It shows a tab strip (t
 - `client/src/i18n/locales.ts` `LOCALES`: the list of shipped locales.
 - `client/src/model-panel.tsx` `ModelPanel`: one model's parameters, context, price and cache settings.
 - `client/src/local-embeddings.tsx` `LocalEmbeddings`: download and check of the local embedding model.
-- `client/src/updates-panel.tsx` `UpdatesDialog`: app and engine update list.
+- `client/src/updates-panel.tsx` `UpdatesDialog`: app and engine update list; a row with `noSource` ("file" or "local") says why the app has no update.
+- `client/src/App.tsx` `BuildErrors`: the build-failed card over an app; its wording follows `built` from the builder status (false: no build ever finished).
 - `client/src/app-update.tsx` `useAppUpdate`: per-app update state behind `AppUpdateBanner`.
 - `client/src/app-reads.tsx` `AppReadsPanel`: the reads an app asked for, answered via `useAppReads`.
 - `client/src/app-notices.tsx` `useAppNotices`: messages from apps shown as `AppToasts`, at most three at a time.

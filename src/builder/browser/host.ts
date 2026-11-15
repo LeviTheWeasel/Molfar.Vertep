@@ -26,6 +26,8 @@ export interface BuildStatus {
   phase: "checking" | "building" | "ready" | "error" | "waiting";
   message?: string;
   errors?: BuildMessage[];
+  /** on an error: false when no build of the app has ever finished (nothing to fall back to) */
+  built?: boolean;
 }
 
 /** What a build did, sent with its output so the engine's log shows it. */
@@ -43,6 +45,8 @@ interface ServerStatus {
   needsBuild: boolean;
   buildable: boolean;
   installing?: boolean;
+  /** a finished build (dist/index.html) exists */
+  built?: boolean;
   status: { rev?: string; ok?: boolean; mode?: string; errors?: BuildMessage[] } | null;
   dev: unknown;
 }
@@ -309,7 +313,11 @@ class AppBuild {
     this.ready = this.start();
   }
 
+  /** Does a finished build exist? From the engine's last answer; true once one lands. */
+  private built: boolean | undefined;
+
   private status(s: BuildStatus): void {
+    if (s.phase === "error" && s.built === undefined && this.built !== undefined) s = { ...s, built: this.built };
     this.lastStatus = s;
     for (const w of this.watchers) w.onStatus(s);
   }
@@ -377,6 +385,7 @@ class AppBuild {
     let st: ServerStatus;
     try {
       st = (await api(this.base())) as ServerStatus;
+      this.built = st.built;
     } catch (e) {
       this.status({ phase: "error", message: String((e as Error).message) });
       return;
@@ -649,6 +658,8 @@ class AppBuild {
       return;
     }
     this.retried = false;
+    // a development build with errors still lands a page: only a clean one is a build to fall back to
+    if (output.ok !== false && !((output.errors as unknown[] | undefined)?.length)) this.built = true;
     this.sessionDeps = depsOf(output.meta) ?? this.sessionDeps;
     const errors = (output.errors as BuildMessage[] | undefined) ?? [];
     if (output.ok === false) this.status({ phase: "error", errors });

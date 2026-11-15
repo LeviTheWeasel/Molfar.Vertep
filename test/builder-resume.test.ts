@@ -92,6 +92,29 @@ const base = {
   "scripts/tool.ts": "// tool\n",
 };
 
+describe("a clean build is remembered (#337)", () => {
+  const status = (app: ReturnType<typeof setup>) => JSON.parse(app.distText(".molfar-build.json")) as { errors: unknown[]; everClean?: boolean };
+
+  it("a development build with errors still writes a page, but no clean build has happened until one lands", async () => {
+    const app = setup({ ...base, "src/a.ts": "export const a = ;;;\n" });
+    await app.fullBuild();
+    expect(fs.existsSync(path.join(app.appDir, "dist", "index.html"))).toBe(true);
+    expect(status(app).errors.length).toBeGreaterThan(0);
+    expect(status(app).everClean).toBe(false);
+    await app.tick();
+    app.write("src/a.ts", 'export const a = "A_FIXED";\n');
+    await app.fullBuild();
+    expect(status(app).errors.length).toBe(0);
+    expect(status(app).everClean).toBe(true);
+    // a later break leaves the last good build in place and still counts
+    await app.tick();
+    app.write("src/a.ts", "export const a = ;;;\n");
+    await app.fullBuild();
+    expect(status(app).errors.length).toBeGreaterThan(0);
+    expect(status(app).everClean).toBe(true);
+  });
+});
+
 describe("source fingerprint: documentation and tooling are not build input", () => {
   it("docs/, test/, tests/, scripts/, top-level *.md and LICENSE leave the revision alone", async () => {
     const app = setup({ ...base, "tests/b.test.ts": "//" });
