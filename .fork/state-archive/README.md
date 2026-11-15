@@ -7,6 +7,7 @@ had reached 488 KB). One file per period, newest first inside each. Nothing here
 
 | File | Covers |
 | --- | --- |
+| `2026-11-11-to-11-12.md` | 2026-11-11 to 2026-11-12: Roleplay 4.114 to 4.118, engine 1.16.2 to 1.16.4 (prepared or released), turn director design |
 | `2026-11-08-to-11-11.md` | 2026-11-08 to 2026-11-11: Roleplay 4.103 to 4.113, engine 1.12.2 to 1.16.1 (prepared or released) |
 | `2026-11-01-to-11-07.md` | 2026-11-01 to 2026-11-07: engine 1.9.0 to 1.11.7, Roleplay 4.80 to 4.98 |
 | `2026-10-24-to-10-31.md` | 2026-10-24 to 2026-10-31: engine 1.3.5 to 1.8.1, Roleplay 4.65 to 4.79 |
