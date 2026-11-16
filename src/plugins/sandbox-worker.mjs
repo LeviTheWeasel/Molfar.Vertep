@@ -123,8 +123,42 @@ let out;
 if (typeof fn === "function") { out = fn(env.ctx, env.host); }`);
 }
 
+/**
+ * Where a call's time went (#422), for the host's slow-call log and the time-limit error. The limit is a wall
+ * clock, so it also counts time the script did not run: host work it asked for (a file read), another call of
+ * this worker (a full pool queues calls on a busy worker, and they take turns on its one thread), and time the
+ * device gave the engine no CPU (a phone pausing the engine app in the background, a busy computer). Measured:
+ * the process CPU over the call, the stretches with no step of the script (PAUSE_MS or more, between two calls of
+ * the interrupt handler that QuickJS makes every few thousand instructions), and how many other calls ran here
+ * meanwhile.
+ */
+const activeCalls = new Set();
+const PAUSE_MS = 250;
+function cpuNow() {
+  try {
+    return process.cpuUsage();
+  } catch {
+    return null;
+  }
+}
+
 port.on("message", async (msg) => {
   const { id, source, hook, ctx, storeSnapshot = {}, llmResults = {}, netResults = {}, netAllowed = false, scriptAllowed = false, scriptResults = {}, maxStoreBytes = 1024 * 1024, storeAllowed = true, llmAllowed = true, fsAllowed = false, fsRoot = null, peers = [], zipAllowed = false, zipBase64 = null, siblingToolDefs = null, siblingCeilings = null, embedResults = {}, embedInfo = {}, executionTimeoutMs = 10_000, memoryLimitBytes = 64 * 1024 * 1024 } = msg;
+  const timing = { startedAt: Date.now(), cpu0: cpuNow(), pausedMs: 0, longestPauseMs: 0, overlap: 0 };
+  activeCalls.add(timing);
+  for (const t of activeCalls) t.overlap = Math.max(t.overlap, activeCalls.size - 1);
+  const timingNow = () => {
+    let cpuMs = null;
+    try {
+      if (timing.cpu0) {
+        const c = process.cpuUsage(timing.cpu0);
+        cpuMs = Math.round((c.user + c.system) / 1000);
+      }
+    } catch {
+      cpuMs = null;
+    }
+    return { startedAt: timing.startedAt, runMs: Date.now() - timing.startedAt, cpuMs, pausedMs: timing.pausedMs, longestPauseMs: timing.longestPauseMs, overlap: timing.overlap };
+  };
   const logs = [];
   const llmRequests = [];
   const netRequests = [];
@@ -544,10 +578,26 @@ try { Object.defineProperty(globalThis, 'fetch', { value: undefined, writable: f
       delivered = true;
       // `settling`: the runtime is still to be freed; the host keeps this worker
       // out of rotation until the `settled` note at the end of the handler
-      reply({ id, fsWrites, settling: true, ...payload });
+      reply({ id, fsWrites, settling: true, ...payload, timing: timingNow() });
     };
     const result = await runSandboxed(
-      async ({ evalCode }) => {
+      async ({ ctx: qjs, evalCode }) => {
+        // the library's own handler, a deadline of executionTimeoutMs from now, plus the pauses (see activeCalls);
+        // the first call only starts the count, so compiling the plugin is not taken for a pause
+        const deadline = Date.now() + executionTimeoutMs;
+        let last = 0;
+        qjs.runtime.setInterruptHandler(() => {
+          const now = Date.now();
+          if (last) {
+            const gap = now - last;
+            if (gap >= PAUSE_MS) {
+              timing.pausedMs += gap;
+              if (gap > timing.longestPauseMs) timing.longestPauseMs = gap;
+            }
+          }
+          last = now;
+          return now > deadline;
+        });
         let r;
         try {
           r = await evalCode(harnessCode(hook), "harness.mjs");
@@ -626,6 +676,7 @@ try { Object.defineProperty(globalThis, 'fetch', { value: undefined, writable: f
       /* port dead — host timeout handles it */
     }
   } finally {
+    activeCalls.delete(timing);
     // Reached once the runtime has been freed (or its freeing failed and `poison` went out first):
     // from here the host may hand this worker its next call.
     try {
