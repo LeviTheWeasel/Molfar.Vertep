@@ -1,5 +1,5 @@
 # Roleplay UI: shell, sections, navigation, themes, shared pieces, languages
-Verified at: molfar.vertep-roleplay 56bf594
+Verified at: molfar.vertep-roleplay 66c9cfc (section: Owners, the inbox line); the rest at 56bf594
 
 ## What it does
 - The shell (`src/components/shell/app-shell.tsx`) draws an icon rail (desktop) or tab bar (phone), one page (`view`), and an optional drawer (`drawer`).
@@ -17,7 +17,7 @@ Verified at: molfar.vertep-roleplay 56bf594
 - `src/components/shell/master-detail.tsx` `MasterDetail`: two panes.
 - `src/components/shell/mobile-tab-bar.tsx` `MobileTabBar`: phone tabs, More sheet.
 - `src/components/shell/rail-hues.ts` `RAIL_HUES`: icon tints.
-- `src/components/shell/inbox.tsx` `InboxDrawer`: needs-you inbox.
+- `src/components/shell/inbox.tsx` `InboxDrawer`: needs-you inbox. Its row kind `proposal` (portrait block, habit, quest of the open chat; `src/lib/proposal-core.ts`) is filled by `checkChatProposals` in `src/lib/proposal-toasts.tsx`, which `src/components/chat/chat-view.tsx` calls; the toasts wear `TONE_TOAST` of `src/components/ui/sonner.tsx` (#420, Roleplay 4.129.0).
 - `src/lib/store.ts` `navigate`: section and chat navigation; `setView` picks page or drawer. On phones, drawers open only over a chat.
 - `src/lib/store.ts` `DRAWER_VIEWS`: sections that may be drawers.
 - `src/hooks/use-back-close.ts` `useBackClose`: phone back gesture.

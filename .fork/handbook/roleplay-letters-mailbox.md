@@ -1,6 +1,6 @@
 # Letters and the mailbox: how a character writes to the user outside a chat
 
-Verified at: molfar.vertep-roleplay 91eec33, molfar.vertep 8310b23
+Verified at: molfar.vertep-roleplay 66c9cfc (section: How another feature could deliver through this); the rest at 91eec33, molfar.vertep 8310b23
 
 ## What it does
 - A card the user has not played for a while can write one short in-character note. The app picks who is due and asks; the plugin enforces the switch and the limits, and makes the one model call.
@@ -48,7 +48,7 @@ Verified at: molfar.vertep-roleplay 91eec33, molfar.vertep 8310b23
 
 ## How another feature could deliver through this
 - Letters is not a general channel. The plugin accepts only `why` = `idle`, `unplayed` or `nosoul`. A new kind needs changes in the plugin and in `letters-core.ts`.
-- A new roleplay feature would write its own store and add its own row kind in `inboxRows` (`src/lib/attention-core.ts`).
+- A new roleplay feature would write its own store and add its own row kind in `inboxRows` (`src/lib/attention-core.ts`). Example: the `proposal` row (portrait blocks, habits, quests of the open chat) reads `useAttention.waiting`, set by `setWaiting` in `src/lib/attention.ts`.
 - A plugin cannot reach the engine mailbox. Its manifest grants only `routes`, `llm` and `fs`. An engine feature calls `queueMail` with a `MailDraft` of kind `skill`, `add`, `replace` or `retire`, and a `from` value.
 - Nothing may write into a chat.
 
