@@ -47,7 +47,7 @@ import { log } from "../logger.js";
 import { hookInsertions, mergePromptSources, sanitizePromptSources, uncovered } from "../prompt-sources.js";
 import { assertPublicHost } from "../net-guard.js";
 import { recordPluginLog } from "./plugin-log.js";
-import { pacerFor, readLimits, runLimited, type PluginLimits } from "./llm-pace.js";
+import { pacerFor, readLimits, routeExecutionMs, runLimited, type PluginLimits } from "./llm-pace.js";
 import type { PeerMount } from "../apps/reads.js";
 
 /** Exports the engine calls on its own (routes and tools are dispatched by
@@ -958,8 +958,8 @@ export async function runPluginRoute(
   // (the Roleplay Agents plugin) before the importer was even asked. The archive travels once, as
   // `zipBase64`, to the plugins that hold the "zip" permission.
   const ctxBody = bodyWithoutZip(req.body);
-  // a read route of a trusted plugin may ask for more than the default 10 s (a slow phone, a big library: #391)
-  const readMs = plugin.manifest.origin === "local" && (req.method === "GET" || req.method === "HEAD") ? readLimits(plugin.manifest.limits).executionMs : 0;
+  // a route of a trusted plugin may ask for more than the default 10 s (a slow phone, a big library, a long chat: #391; a send hit it too)
+  const readMs = routeExecutionMs(plugin.manifest);
   const zipLimits = zipOk ? { executionTimeoutMs: 120_000, memoryLimitBytes: 512 * 1024 * 1024 } : readMs > 10_000 ? { executionTimeoutMs: readMs } : {};
   // a generation ends when the ROUTE ends, not when its model call does: the commit comes in a
   // later pass, and a page asking "still generating?" in that gap gave up on a live reply (#13)
@@ -1109,8 +1109,8 @@ export interface PluginManifest {
    *  other. `concurrency`: the requests of one round run side by side, up to this
    *  many (1 to 4), spaced out, and one the provider refused with a 429 is tried
    *  again after a pause. Absent: one request after another, as before.
-   *  `executionMs`: how long one read route (GET) may run, 10000 to 30000, default 10000;
-   *  for a plugin that reads a big library on a slow phone. Only a plugin with origin
+   *  `executionMs`: how long one route (any method) may run, 10000 to 30000, default 10000;
+   *  for a plugin that reads a big library or assembles a long chat on a slow phone. Only a plugin with origin
    *  "local" gets it: an imported one keeps the default. */
   limits?: PluginLimits;
 }

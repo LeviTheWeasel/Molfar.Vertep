@@ -40,7 +40,7 @@ Every call gets `host` from `src/plugins/sandbox-worker.mjs`. Permission in brac
 ## Hooks a plugin can export
 | Export | When it is called | Time limit |
 |---|---|---|
-| `handleRoute(ctx, host)` | An app request that reaches the plugin [routes] | 10 s execution, 20 s wall, per pass; 3 passes, up to 12 |
+| `handleRoute(ctx, host)` | An app request that reaches the plugin [routes] | 10 s execution, 20 s wall, per pass; 3 passes, up to 12. A plugin with origin `local` may ask for 10 to 30 s for every method with `limits.executionMs` (`routeExecutionMs` in llm-pace.ts; the Roleplay engine plugin asks for 30 s, since 1.16.7 for a send too: #391) |
 | `handleTool` with `TOOLS` | The agent calls a plugin tool [tools] | 10 s / 20 s per pass; 3 passes |
 | `onTick(ctx, host)` | Every `schedule.intervalMs`, floor 5 s [schedule] | 10 s / 20 s |
 | `uiPanel(ctx, host)` | A read of an app's `__panels` route | 10 s / 20 s |

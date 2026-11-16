@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { Pacer, isRateLimited, readLimits, runLimited, type Clock } from "../src/plugins/llm-pace.js";
+import { Pacer, isRateLimited, readLimits, routeExecutionMs, runLimited, type Clock } from "../src/plugins/llm-pace.js";
 
 /** A clock that only moves when something sleeps, so a pause costs no real time. */
 function fakeClock(): Clock & { t: number; slept: number[] } {
@@ -35,6 +35,11 @@ describe("manifest limits", () => {
     expect(readLimits({ executionMs: 600000 }).executionMs).toBe(30000);
     expect(readLimits({ executionMs: 100 }).executionMs).toBe(10000);
     expect(readLimits({ executionMs: "9" }).executionMs).toBe(10000);
+    // only a plugin of this machine gets it, for every method of its routes (a send as much as a read)
+    expect(routeExecutionMs({ origin: "local", limits: { executionMs: 30000 } })).toBe(30000);
+    expect(routeExecutionMs({ origin: "local" })).toBe(10000);
+    expect(routeExecutionMs({ origin: "imported", limits: { executionMs: 30000 } })).toBe(0);
+    expect(routeExecutionMs({ limits: { executionMs: 30000 } })).toBe(0);
   });
 });
 
