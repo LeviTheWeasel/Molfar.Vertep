@@ -14,6 +14,11 @@ Reply in Ukrainian, code and repo files in English (CLAUDE.md).
 | 4. cast deck | not started |
 | 5. DM tab, Memory view (#425) | not started |
 
+**The next step is 2.5, not 3** (owner, 2026-11-16, DESIGN "Corrections v7", read it before anything else in DESIGN: it
+changes the things tidy-up, the entrance judge and where world facts go). Step 2.5 is one small release that repairs what
+is shipped: the DM's input sends only the relevant records in full (v7 point 7), and the cast tells "mentioned" from
+"on stage" (v7 point 2). Then step 3 with v7 points 1, 4 and 8, then step 4 with 6 and 9. Roleplay `main` is 4.132.0.
+
 Issue #424 is still open (steps 3 and 4 remain). A comment with what shipped is on it. #425 keeps its own list.
 
 ## What step 2 built (the facts to rely on; details in the handbook page and `docs/DATA-FORMATS.md` "Cast")

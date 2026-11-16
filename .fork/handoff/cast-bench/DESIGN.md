@@ -359,3 +359,54 @@ Filed as its own issue (see the issue list); recorded here because it touches th
 The learning idea has its own home: issue #425 holds the full design (decisions, storage, the DM tab, the Memory view, the
 inventory of the Profiles editor that is kept). Owner decisions there: not in the world lorebook, a separate DM store next
 to the prompt, the Profiles tab renamed to "DM". Only step 0 (remember what was deleted) stays in release 2 of this issue.
+
+## Corrections v7 (2026-11-16, a review against the code of 4.132.0; owner: "записуй всі")
+Also posted as comments on #424 and #425. Where a point contradicts the text above, this section wins.
+
+### Corrections
+1. **Things tidy-up (changes "Things: the tidy-up rule" of v3).** The 3-in-10 rule alone archives what the book exists for:
+   a hidden letter, a key, a clue are silent on purpose, and `entryOf` disables a `dormant` entry, so the writer does not
+   get it when it is named again.
+   - A thing gets a field `why`: `clue`, `hidden`, `promise`, `gift`, `weapon`, `contested`, or none. The DM writes it,
+     the player can change it in the form. `clue`, `hidden` and `promise` are exempt from the 3-in-10 rule.
+   - Auto-wake: an archived (`dormant`) thing named in 2 replies of the last 10 becomes active again in the same code
+     pass, with a log line. Every archive and every wake is logged (who, why, the counts).
+2. **Mentioned is not on stage (repairs 4.131.0).** `judgeEntrance` counts "came" when the name occurs, and the silence
+   resets on the name too, so a one-line message buys a whole threshold.
+   - Two silences: `mentioned` (name or alias in the text) and `stage` (in the Dashboard's `present`, or a contact). Without
+     the Dashboard only `mentioned` exists and the behaviour stays as today.
+   - The judge's result is `came` (on stage) or `mentioned`; the log and the mark under the reply show which.
+   - A medium or big entrance that ended as `mentioned`: half the usual gap before the next one, and its band is at
+     least medium.
+3. **Scene boundary (waits for the owner's live-model tests).** A due entrance waits up to 6 replies for a place change
+   or a time jump and then fires anyway; a time jump of a day or more adds to the silence.
+4. **World facts stay in the book (narrows v4).** A fact about the world (a custom, a law, history) is folded into the
+   text of the place or faction it belongs to; only events and secrets go to the Litopys. The "old notes" banner offers
+   both ways per note. Verify first whether a saved world and "New chat in this world" carry Litopys facts.
+5. **The bench also reads the cards (after the live tests).** `benchEntries` reads only lorebooks; add each card's
+   description and scenario to the same build call. A person found there is a record with no `link`.
+
+### Additions
+6. **A reason to come back.** When a bench person is within one DM cadence (`everyN`) of their threshold, the DM run's
+   input lists them ("may come back soon: n3 Mira (silent 27)") and its output may carry `returns: [{ id, why }]`:
+   what they were doing and what they want now, tied to a front or an open thread, at most 200 characters. Stored on the
+   record as `hook { text, at }` and rewound with the core; `entranceInsert` uses it in place of the first sentence.
+   No hook: today's note. Covers #378's "what the absent one was doing" only for those who return.
+7. **The DM's input shrinks (repairs what is shipped).** `dmInput` sends every active record in full. Full text only for
+   records named in the new part of the story, at the scene's place, pinned, or bench people who are due soon; every other
+   record is one line `id · kind · name`. The DM can still update or retire by id. Measure the input with
+   `estimateTextTokens` before and after on a state of about 80 records and put both numbers into the PR.
+8. **Step 0 tells the DM.** The input carries "Do not record (the player removed): ..." (the newest 30 names) next to
+   the code refusal.
+9. **Deck cards are tied to someone.** A cast card names one existing person (`tie`: a name from the records or the
+   cards) and its own want, besides the faction.
+10. **#425:** the first proposals are settings raised by a code threshold, with no model; enough signals is a share of the
+    DM's own records of a kind, not a count; a prose rule gets a small call of its own; rules do not travel with a saved
+    world; a hand edit of a record's text is logged in step 0 (kind, length before and after).
+
+### Order (replaces "Order of work" for what is left)
+- **2.5, a small release first:** 7 and 2.
+- **3, the book:** as planned, with 1, 4 and 8.
+- **4, the deck:** as planned, with 6 and 9.
+- **After the owner's live-model tests:** 3, then 5.
+- **5, the DM tab and Memory (#425):** with 10.
