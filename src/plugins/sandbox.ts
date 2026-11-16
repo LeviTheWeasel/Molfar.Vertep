@@ -14,6 +14,7 @@ import os from "node:os";
 import { Worker } from "node:worker_threads";
 import path from "node:path";
 import { log } from "../logger.js";
+import { isTimeLimitError, SLOW_CALL_MS, type SandboxTiming, timingLine, timingNote, totalMs } from "./sandbox-timing.js";
 
 /** A packaged build bundles the worker as its own entry point and names it:
  *  "./…" is the worker's source path, which a compiled executable maps to
@@ -116,12 +117,29 @@ export interface SandboxResponse {
    *  The route dispatcher commits a route's own files with this list and
    *  labels everything else out-of-band, without a status walk. */
   fsWrites?: string[];
+  /** Where the call's time went (sandbox-timing.ts); absent when the worker never answered. */
+  timing?: SandboxTiming;
 }
 
 /** The wasm heap only grows, a few MB per large route, so a worker retires past
  *  this and hands new calls to a fresh one; ending the thread is the only way
  *  that memory comes back. */
 const HEAP_RETIRE_BYTES = 192 * 1024 * 1024;
+
+/** A slow call goes to the log with where its time went, and a call that ran out of time says it in its error,
+ *  which reaches the user's toast: "a send failed" alone told nobody whether the plugin, the pool or the device
+ *  was slow (#422). */
+function noteTiming(req: SandboxRequest, res: SandboxResponse, gateMs: number): SandboxResponse {
+  const t = res.timing;
+  if (!t) return res;
+  t.gateMs = gateMs;
+  const outOfTime = !res.ok && isTimeLimitError(res.error);
+  if (outOfTime || totalMs(t) >= SLOW_CALL_MS) {
+    log.warn(`[sandbox] ${outOfTime ? "out of time" : "slow call"}: ${req.label ?? req.hook}: ${timingLine(t)}`);
+  }
+  if (outOfTime) res.error = `${res.error} ${timingNote(t)}`;
+  return res;
+}
 
 /** Errors after which this worker must not serve another call. */
 const POISONED = /timed out|aborted|exited|worker error|out of memory/;
@@ -237,6 +255,7 @@ class SandboxWorkerHandle {
 
   call(req: SandboxRequest, timeoutMs = req.hardTimeoutMs ?? (req.executionTimeoutMs ? req.executionTimeoutMs + CALL_OVERHEAD_MS : CALL_TIMEOUT_MS)): Promise<SandboxResponse> {
     const id = this.nextId++;
+    const postedAt = Date.now();
     return new Promise<SandboxResponse>((resolve) => {
       let settled = false;
       const finish = (r: SandboxResponse) => {
@@ -245,6 +264,8 @@ class SandboxWorkerHandle {
         clearTimeout(timer);
         this.pending.delete(id);
         if (this.retiring && this.pending.size === 0) void this.dispose();
+        // the worker's start minus the post: time in line behind a busy worker (one clock, one machine)
+        if (r.timing) r.timing.queueMs = Math.max(0, r.timing.startedAt - postedAt);
         resolve(r);
       };
       const timer = setTimeout(() => finish({ ok: false, error: `sandbox call timed out after ${timeoutMs}ms` }), timeoutMs);
@@ -359,13 +380,15 @@ export class PluginSandbox {
     // pool it could: calls that may write a data dir take it alone, pure reads
     // share it. Different dirs (different apps) never wait for each other.
     const key = req.fsAllowed && req.fsRoot ? req.fsRoot : null;
-    if (!key) return this.evalAttempt(req, req.retryOnPoison === true);
+    if (!key) return noteTiming(req, await this.evalAttempt(req, req.retryOnPoison === true), 0);
     const exclusive = req.exclusive !== false;
     const gate = this.gates.get(key) ?? { readers: 0, writer: false, waiting: [] };
     this.gates.set(key, gate);
+    const gateFrom = Date.now();
     await this.enter(gate, exclusive);
+    const gateMs = Date.now() - gateFrom;
     try {
-      return await this.evalAttempt(req, req.retryOnPoison === true);
+      return noteTiming(req, await this.evalAttempt(req, req.retryOnPoison === true), gateMs);
     } finally {
       this.leave(key, gate, exclusive);
     }

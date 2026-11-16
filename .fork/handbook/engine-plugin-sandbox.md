@@ -1,5 +1,5 @@
 # App plugins: the sandbox, the host API, hooks and limits
-Verified at: molfar.vertep 1593219
+Verified at: molfar.vertep 1593219; Timing and the Traps on a shared worker at branch claude/sandbox-timing (1.16.8)
 
 ## What it does
 An app plugin is `plugins/<id>/plugin.js` with a `manifest.json` beside it, inside an app folder. Each call evaluates the current source in a QuickJS runtime owned by a pooled worker thread. The plugin asks for models and the network through `host`, and the engine does that work between passes. A call that fails or overruns ends its worker. Manifest permissions gate each capability.
@@ -14,6 +14,7 @@ An app plugin is `plugins/<id>/plugin.js` with a `manifest.json` beside it, insi
 - `src/plugins/runtime.ts` `syncSchedules`: arms `onTick` timers.
 - `src/plugins/sandbox.ts` `PluginSandbox`: worker pool, per-data-dir gate, retries in `evalAttempt`.
 - `src/plugins/sandbox.ts` `call`: wall clock per call; a timeout ends the worker.
+- `src/plugins/sandbox.ts` `noteTiming` and `src/plugins/sandbox-timing.ts`: where a call's time went; the slow-call log line and the note on a time-limit error (#422).
 - `src/plugins/sandbox-worker.mjs` `harnessCode`: wraps `plugin.js` and picks the hook.
 - `src/plugins/sandbox-worker.mjs` `fsSvc`: the `host.fs` jail.
 - `src/plugins/atomic-write.mjs` `writeFileAtomic`: temp file, then rename over the target.
@@ -68,6 +69,9 @@ Every call gets `host` from `src/plugins/sandbox-worker.mjs`. Permission in brac
 - Store 1 MB, `fs.write` 4 MB, peer read `MAX_READ` 2 MB. `src/plugins/sandbox-worker.mjs`
 - `UPGRADE_LIMITS`: 5 min, 512 MB; `SCHEDULE_SYNC_MS` = 10 s. `src/server/app.ts`
 
+## Timing (#422)
+The execution limit is a wall clock from the start of the script, so it counts more than the plugin's own work. The worker measures each call (`activeCalls` in `src/plugins/sandbox-worker.mjs`): its run time, the CPU of the whole engine process meanwhile (`process.cpuUsage`, all threads), the stretches of 250 ms or more with no step of the script (`PAUSE_MS`, between calls of its own interrupt handler, which keeps the library's deadline), and how many other calls ran in the same worker. The host adds the wait for the data-folder gate and the wait for the worker (`queueMs`, starting a worker included: a cold worker took 6.7 s on a loaded laptop). `noteTiming` writes `[sandbox] slow call` (5 s or more in all, `SLOW_CALL_MS`) or `[sandbox] out of time` to the log, and appends to a time-limit error a note the user sees in the toast: run time, engine CPU, time the script stood still, and the likely cause (`timingCause`: little CPU, another call in the worker, or the plugin's own work). Waiting for the gate or a worker is not inside the limit; time on a shared worker and time with no CPU are.
+
 ## Flow
 1. The app page calls `/v1/apps/<app>/...`. The `app.all` handler in `src/server/app.ts` reads the body (8 MB cap) and calls `dispatchAppRoute`.
 2. `dispatchAppRoute` takes the enabled plugins from `discoverAppPlugins` and calls `runPluginRoute` on each until one answers.
@@ -89,6 +93,7 @@ Reload: `discoverPlugins` checks file mtimes on each app request and re-reads on
 - `writeFileAtomic`: also used by `src/plugins/store.ts`; `test/atomic-write.test.ts`.
 
 ## Traps
+- A full pool queues a call on the least loaded worker, and the worker's message handler is async: the two calls take turns on its one thread in small slices, and each one's clock runs for both. Measured with one worker: two calls of 1.5 s of work each both took 5.6 s. Calls of one app with `fs` cannot meet this way during a write (the gate gives a write the data folder alone), but reads of one app can, and so can calls of different apps or without `fs`.
 - Clocks apply per pass. A route with three model rounds makes three worker calls, and `runPluginRoute` sets no overall limit.
 - Store writes from a failed pass still apply: `applyStoreWrites` runs before the `!r.ok` check. Files written before a crash stay on disk, and a 500 queues no commit.
 - `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. Confirmed on `main` at 8310b23: a test in `test/plugins.test.ts` (`it.failing`, branch `claude/handbook-findings`, d8ef627) pins it. The official Roleplay plugins say `origin: "local"` in their manifests, so they are not affected; only an imported plugin that declares `hooks` is. The `llmRequest` loop gates on a declared `hooks` plus a granted `llm`; the proposed fix is the same gate here. Not changed: security code, waiting for review.

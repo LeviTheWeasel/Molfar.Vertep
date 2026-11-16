@@ -7,6 +7,11 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+## 1.16.8 (2026-11-16)
+
+- **A plugin call that runs out of time now says where its time went (#422).** "The script execution has exceeded the maximum allowed time limit" kept coming back on a phone after 1.16.7, once on a new chat of under 50 messages with a small lorebook, where the plugin's work takes about a second. The limit is a wall clock, so it also counts time the plugin did not run, and the error never said which. The error now ends with a note, which the toast shows. The note gives how long the call ran, how much CPU the engine got, and how long the script stood still. It also names the likely cause: the device gave the engine little CPU (a phone pausing the engine app in the background, a busy computer), other calls shared the worker, or the plugin's own work took that long. Any call of 5 s or more is also written to the log with the waits for the data folder and for a worker. Nothing else changes: same limits, same scheduling.
+- Corrects 1.16.7's note on the cause. The "25 ms" bench never reached the pass that builds the prompt. Measured in the sandbox, that pass took 6.8 s on a long chat with a 100-message lorebook window, and Roleplay 4.134.1 cut it to 4.3 s.
+
 ## 1.16.7 (2026-11-16)
 
 - **A send may take up to 30 s in the Roleplay plugin (was 10 s).** `limits.executionMs` of a plugin manifest (10 to 30 s, a plugin with origin "local" only) applied to read routes only since 1.16.3 (#391). A send of a long chat on a slow phone or a busy computer still hit the 10 s default: "plugin roleplay__engine route POST /chats/<id>/send failed: The script execution has exceeded the maximum allowed time limit". Now the limit applies to every method of the plugin's routes; Roleplay's manifest already asks for 30 s, so only the engine needs the update. An imported plugin keeps 10 s.
