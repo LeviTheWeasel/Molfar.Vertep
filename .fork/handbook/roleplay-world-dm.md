@@ -1,5 +1,5 @@
 # World DM: the plugin that builds a world from the story and moves it during play
-Verified at: molfar.vertep-roleplay e09c2ed (sections: Traps); the rest at 91eec33
+Verified at: molfar.vertep-roleplay 1c71ed1 (sections: Owners, Data, Traps); e09c2ed (Traps); the rest at 91eec33
 
 ## What it does
 - After a reply, a DM model reads the new part of the story and returns small JSON. Code turns it into the chat's world book: one record per person, place, group, thing or fact that matters beyond the scene.
@@ -11,6 +11,8 @@ Verified at: molfar.vertep-roleplay e09c2ed (sections: Traps); the rest at 91eec
 ## Owners
 - `plugins/world/plugin.js`, `updateRoute`: the DM run; checks, model call, apply, tick, save.
 - `plugins/world/plugin.js`, `dueReason`: code rule for when a run is due.
+- `plugins/world/plugin.js`, `startSettings`: the level, own profile id and numbers a chat starts with when the DM switches itself on for it (`autoOn`, no state file): the default profile's, else the chronicler's. Used by `stateRoute`, `settingsRoute` and `updateRoute`.
+- `plugins/world/plugin.js`, `configRoute`, `saveConfig`, `cleanConfig`: `PUT /world/config`, including `defaultProfile` (refused when no such profile); `listProfiles` marks `default`, and deleting the default profile clears it.
 - `plugins/world/plugin.js`, `applyReport`: writes the model's add, update and retire ops as records.
 - `plugins/world/plugin.js`, `cleanEntity`: record shape; an unknown kind becomes `fact`.
 - `plugins/world/plugin.js`, `applyCarry`: wear and carry, used only when carrySource is `dm`.
@@ -49,7 +51,7 @@ Verified at: molfar.vertep-roleplay e09c2ed (sections: Traps); the rest at 91eec
 - `world/snaps/<chatId>.json`: up to 8 snapshots `{ upTo, at, head, core }`.
 - `world/dice/<chatId>.json`: the newest 60 rolls.
 - `lorebooks/world-<chatId>.json`: the world book; one entry per record, memo `world:<id>`.
-- `world/config.json`, `world/profiles/`, `world/recipes/`, `world/library/`: see `docs/DATA-FORMATS.md`, "World DM".
+- `world/config.json`, `world/profiles/`, `world/recipes/`, `world/library/`: see `docs/DATA-FORMATS.md`, "World DM". `world/config.json` also holds `defaultProfile` (a level above the chronicler or an own `p-...` id; empty = the chronicler; the DM "off" is never a default), read only for a chat with no state file.
 
 ## When a model is called, and when code decides
 - Play model, in `updateRoute`: the DM run returns records, front ops, a delivered flag and an event choice. A sweep is a records-only run of the same route.
@@ -83,6 +85,7 @@ The DM's system prompt is never sent with the reply. Records reach the reply thr
 - Deck size: `DECK_MIN`, `DECK_MAX`, `cleanDeck`, `DECK_SYSTEM`.
 
 ## Traps
+- A default profile reaches a chat only through `startSettings`, at the first state of a chat that has no file. A chat that already has a state file never takes a new default, and a default that was deleted or never existed falls back to the chronicler quietly.
 - `DECK_MIN` (8) is a request in the deck prompt, not a limit: `deckRoute` keeps whatever the model returns (even one card) and only flags `short: true`, which the client shows as a warning. No retry.
 - The roll_dice tool in `plugins/tools/plugin.js` uses Math.random and is not logged by World. World's dice are seeded per chat, message and swipe.
 - `llmRequest` marks the event sent before the reply exists. A reply that never lands is caught later by `eventLost`.
