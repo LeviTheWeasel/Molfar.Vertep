@@ -43,6 +43,11 @@ export function readLimits(raw: unknown): { passes: number; concurrency: number 
   return { passes: whole(l.passes, PASSES_DEFAULT, PASSES_MAX) ?? PASSES_DEFAULT, concurrency: whole(l.concurrency, 1, CONCURRENCY_MAX), executionMs: whole(l.executionMs, EXEC_MS_DEFAULT, EXEC_MS_MAX) ?? EXEC_MS_DEFAULT };
 }
 
+/** How long one route of this plugin may run, in ms: its manifest's `limits.executionMs` for a plugin with origin "local", 0 (the engine's default) for any other. Every method counts: a send on a slow phone needs it as much as a read (#391, and the same error on POST /chats/:id/send). */
+export function routeExecutionMs(manifest: { origin?: unknown; limits?: unknown }): number {
+  return manifest.origin === "local" ? readLimits(manifest.limits).executionMs : 0;
+}
+
 /** Does this error say the provider is refusing for speed? The error text is all that reaches us. */
 export function isRateLimited(message: string | undefined): boolean {
   return !!message && /\b429\b|rate[\s_-]?limit|too many requests/i.test(message);
