@@ -1,5 +1,5 @@
 # Dashboard: the sensor pass, relations, the character journal, the clock
-Verified at: molfar.vertep-roleplay 92638da (parts); rest 1f0a99f
+Verified at: molfar.vertep-roleplay 4593b0f (the hand edits of items), 92638da (parts); rest 1f0a99f
 
 ## What it does
 - After a reply, a sensor model call reads the new messages and returns one JSON report: present people, clock, scene, events, each character's mood, condition, outfit, holding and goal, what each learned, what was said or promised, threads (quests), journal lines and edges between people.
@@ -22,6 +22,8 @@ Verified at: molfar.vertep-roleplay 92638da (parts); rest 1f0a99f
 - `plugins/relations/plugin.js` `applySensor`: writes the snapshot, runs the apply functions, keeps the newest `SNAPSHOT_LIMIT` (40).
 - `plugins/relations/plugin.js` `charEntry`: one character's stats, mood, condition, outfit and holding ledger, and thought.
 - `plugins/relations/plugin.js` `previousStateText`: the sensor's Previous state; item ids for present characters and for up to `AWAY_LISTED` (3) characters out of the scene.
+- `plugins/relations/plugin.js` `notesRoute`: the `/dashboard/notes` route of hand edits; `item-remove`, `item-rename` and `item-put` correct a worn or held item (remove and rename in every snapshot that holds it).
+- `src/components/dashboard/dash-cards.tsx` `OutfitCard`: the "Outfit and things" card; its pencil opens the rows of `OutfitEdit` (remove, rename).
 - `plugins/relations/plugin.js` `applyLedger`: applies `see` and `off` to the worn and held items; `goneWhere` turns a "left behind" text on a listed id into an `off`, `sameKindOfGarment` joins an id-less garment to the one listed item of its kind.
 - `plugins/relations/plugin.js` `bondLine` `trendTails` `bandOf`: the bond line for the reply model (`BOND_WORDS`), tails for moving feelings, the eight phrase bands.
 - `plugins/relations/plugin.js` `applyNotebook`: what each character saw, heard or guessed.
