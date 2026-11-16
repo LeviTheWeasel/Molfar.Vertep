@@ -7,6 +7,11 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+## 1.16.9 (2026-11-17)
+
+- **The 30 s a plugin asks for now reaches installed apps, and their hooks (#422).** A send on a phone failed with "...exceeded the maximum allowed time limit (ran 10.2 s, engine CPU 10.4 s, script stood still 1.1 s: the plugin's own work took this long)". The 1.16.8 note showed the call stopped at 10 s, not the 30 s the Roleplay plugin asks for. Installing or updating an app from its repository marks every bundled plugin "imported", and `limits.executionMs` was honoured only for "local" plugins. So 1.16.3 and 1.16.7 never reached the Roleplay people run; they were checked on plugins that were not installed that way. Now every plugin gets its `limits.executionMs` (10 to 30 s), in its routes and in its hooks (an `llmRequest` hook runs before every reply). This gives an imported plugin nothing new it could not already take: `limits.passes` let it run up to 12 passes of 10 s. Roleplay 4.135.2 asks for 30 s in its Dashboard, Litopys, World DM and Agents plugins too.
+- Handbook: an installed app's plugins are imported, and the claim that the official Roleplay plugins are "local" is corrected.
+
 ## 1.16.8 (2026-11-16)
 
 - **A plugin call that runs out of time now says where its time went (#422).** "The script execution has exceeded the maximum allowed time limit" kept coming back on a phone after 1.16.7, once on a new chat of under 50 messages with a small lorebook, where the plugin's work takes about a second. The limit is a wall clock, so it also counts time the plugin did not run, and the error never said which. The error now ends with a note, which the toast shows. The note gives how long the call ran, how much CPU the engine got, and how long the script stood still. It also names the likely cause: the device gave the engine little CPU (a phone pausing the engine app in the background, a busy computer), other calls shared the worker, or the plugin's own work took that long. Any call of 5 s or more is also written to the log with the waits for the data folder and for a worker. Nothing else changes: same limits, same scheduling.

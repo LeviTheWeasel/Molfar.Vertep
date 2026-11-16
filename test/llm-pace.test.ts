@@ -35,11 +35,14 @@ describe("manifest limits", () => {
     expect(readLimits({ executionMs: 600000 }).executionMs).toBe(30000);
     expect(readLimits({ executionMs: 100 }).executionMs).toBe(10000);
     expect(readLimits({ executionMs: "9" }).executionMs).toBe(10000);
-    // only a plugin of this machine gets it, for every method of its routes (a send as much as a read)
+    // every method of its routes and its hooks (a send as much as a read)
     expect(routeExecutionMs({ origin: "local", limits: { executionMs: 30000 } })).toBe(30000);
     expect(routeExecutionMs({ origin: "local" })).toBe(10000);
-    expect(routeExecutionMs({ origin: "imported", limits: { executionMs: 30000 } })).toBe(0);
-    expect(routeExecutionMs({ limits: { executionMs: 30000 } })).toBe(0);
+    // an app installed from its repository marks every plugin imported: the limit must still reach it (#422)
+    expect(routeExecutionMs({ origin: "imported", limits: { executionMs: 30000 } })).toBe(30000);
+    expect(routeExecutionMs({ limits: { executionMs: 30000 } })).toBe(30000);
+    expect(routeExecutionMs({ origin: "imported", limits: { executionMs: 99999 } })).toBe(30000);
+    expect(routeExecutionMs({ origin: "imported" })).toBe(10000);
   });
 });
 
