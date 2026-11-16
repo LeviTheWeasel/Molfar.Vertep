@@ -1,6 +1,6 @@
 # Prompt assembly for a Roleplay reply, and the prompt inspector
 
-Verified at: molfar.vertep-roleplay efead2b (Order, step 6); the rest at 4.127.0 (branch claude/cache-keepalive-112), molfar.vertep 4004846 + cache branch
+Verified at: molfar.vertep-roleplay 27e146c (4.131.0) (the "Cast" part); molfar.vertep-roleplay efead2b (Order, step 6); the rest at 4.127.0 (branch claude/cache-keepalive-112), molfar.vertep 4004846 + cache branch
 
 ## What it does
 - The engine plugin's `assemble` builds a reply's messages from the preset, card, persona, lorebooks, regex, macros and history. It also returns `sources`, which records where each part came from.
@@ -21,7 +21,7 @@ Verified at: molfar.vertep-roleplay efead2b (Order, step 6); the rest at 4.127.0
 - roleplay: `plugins/engine/plugin.js` `cleanPromptBoard`: drops switch keys not in `PROMPT_BOARD_OFF_KEYS`.
 - roleplay: `plugins/litopys/plugin.js` `llmRequest`: Litopys inserts, placed by `withInsert` and `withTailInsert`.
 - roleplay: `plugins/relations/plugin.js` `llmRequest`: Dashboard inserts, placed by its own `withTailInsert`.
-- roleplay: `plugins/world/plugin.js` `llmRequest`: World DM, dice, pace, life; `withLast` joins them to the newest user message.
+- roleplay: `plugins/world/plugin.js` `llmRequest`: World DM, dice, pace, life, and "Cast" (a person coming back, #424: a firm note, one at a time, at every level but off); `withLast` joins them to the newest user message.
 - roleplay: `plugins/agents/plugin.js` `llmRequest`: agent hints; `withLastUser` joins them the same way.
 - roleplay: `src/lib/engine.ts` `promptPreview`: client call for the peek.
 - roleplay: `src/components/chat/prompt-peek-dialog.tsx` `PromptPeekDialog` (opened from the Request size popup with a `cache` prop, it marks where the provider's cache ends: `src/lib/cache-boundary.ts` `cacheBoundary`, `blockStates`, `partStates`; `src/components/chat/request-cache.tsx` is the popup's cache section); `src/components/chat/prompt-sources.tsx` `PromptSourcesPanel`, `MarkedPre`; `src/lib/tokens.ts` `estimateTokens` (BPE count, peek only).
@@ -45,7 +45,7 @@ Verified at: molfar.vertep-roleplay efead2b (Order, step 6); the rest at 4.127.0
 - `llmRequest(ctx, host)` answers only for `ctx.key === "reply"` and returns a patch with `messages` and optionally `promptSources`.
 - The runtime keeps only `LLM_PATCH_FIELDS` (messages, systemPrompt, model and a few more). A sibling needs the `hooks` and `llm` permissions; a crashing hook is skipped.
 - A hook's own labels are kept. Text it added that no label covers gets the plugin's name, kind `plugin`.
-- Users: Litopys (memory, story, recollections, who-knows, hidden plan), Dashboard (relationship, journal, said, fast sensor), World DM (event, "World · here", dice, pace, life), agents ("Agent: <label>"). Tools arrive only when the request sets `wantsTools`, through `siblingTools`.
+- Users: Litopys (memory, story, recollections, who-knows, hidden plan), Dashboard (relationship, journal, said, fast sensor), World DM (event, "World · here", dice, pace, life, cast), agents ("Agent: <label>"). Tools arrive only when the request sets `wantsTools`, through `siblingTools`.
 
 ## Budgets and what gets cut
 - Window: the model's context (`presetMaxCtx`). Reply reserve: the preset's max-output setting, else 1024.

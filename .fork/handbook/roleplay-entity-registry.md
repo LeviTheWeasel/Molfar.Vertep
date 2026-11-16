@@ -1,6 +1,6 @@
 # Entity registry: one id per person, thing and place in a chat
 
-Verified at: molfar.vertep-roleplay 91eec33
+Verified at: molfar.vertep-roleplay 91eec33 (the cast line: 27e146c (4.131.0))
 
 ## What it does
 
@@ -42,7 +42,7 @@ Each chat has one registry file that lists every person, thing and place the sto
 - Dashboard sensor, `plugins/relations/plugin.js` `personName`: name in, registry id out. The Dashboard's own stores stay keyed by name.
 - Dashboard merge UI, `src/components/dashboard/dash-merge.tsx` `useMerge`: sends `merge-character` with Dashboard names.
 - Dashboard things, `plugins/relations/plugin.js` (`regAdd`, kind `thing`, ~5393 and ~5509): by id.
-- World DM, `plugins/world/plugin.js` `applyReport`: NPC records by record id through `regIds`. `holder` and `inside` by display name.
+- World DM, `plugins/world/plugin.js` `applyReport`: NPC records by record id through `regIds`. The cast (`castIdentity`, `presentId`, #424) follows a person by that registry id first (the Dashboard's scene: `personIds`, else `resolveName`; the registry's names and aliases of the person), and drops a name the registry gives to another person; `joinPeople` registers a bench person on adoption. `holder` and `inside` by display name.
 - Litopys, `plugins/litopys/plugin.js` `applyWorkerResult`: `subject` and `knownBy` by canonical name.
 - Voice colours, `plugins/relations/plugin.js` `pickVoiceColors`: by person id. The client in `src/lib/chat-voices.ts` `loadChatVoices` loads them.
 - Agents, `plugins/agents/plugin.js` `dashNames`: by registry id in, Dashboard name out.

@@ -1,5 +1,5 @@
 # World DM: the plugin that builds a world from the story and moves it during play
-Verified at: molfar.vertep-roleplay 1c71ed1 (sections: Owners, Data, Traps); e09c2ed (Traps); the rest at 91eec33
+Verified at: molfar.vertep-roleplay 27e146c (4.131.0) (sections: Owners, Data, Traps, Tests: cast); 1c71ed1 (Owners, Data); e09c2ed (Traps); the rest at 91eec33
 
 ## What it does
 - After a reply, a DM model reads the new part of the story and returns small JSON. Code turns it into the chat's world book: one record per person, place, group, thing or fact that matters beyond the scene.
@@ -14,7 +14,14 @@ Verified at: molfar.vertep-roleplay 1c71ed1 (sections: Owners, Data, Traps); e09
 - `plugins/world/plugin.js`, `startSettings`: the level, own profile id and numbers a chat starts with when the DM switches itself on for it (`autoOn`, no state file): the default profile's, else the chronicler's. Used by `stateRoute`, `settingsRoute` and `updateRoute`.
 - `plugins/world/plugin.js`, `configRoute`, `saveConfig`, `cleanConfig`: `PUT /world/config`, including `defaultProfile` (refused when no such profile); `listProfiles` marks `default`, and deleting the default profile clears it.
 - `plugins/world/plugin.js`, `applyReport`: writes the model's add, update and retire ops as records.
-- `plugins/world/plugin.js`, `cleanEntity`: record shape; an unknown kind becomes `fact`.
+- `plugins/world/plugin.js`, `cleanEntity`: record shape; an unknown kind becomes `fact`. Also `relation`, `weight`, `link`, `noReturn` (person and group only) and the `dormant` status (#424).
+- `plugins/world/plugin.js`, `castIdentity`, `silenceOf`, `seenIn`: cast (#424). Who a person record is for the cast (registry id first, names after; a name the registry gives to another person is dropped) and the replies since they were last seen, in the Dashboard's scene or in the text.
+- `plugins/world/plugin.js`, `castThreshold`, `rollEntrance`, `benchDue`, `planEntrance`: Frequency's silence with a per-person jitter, the 2d6 + silence + weight roll and its three bands, who is due, a new entrance (or one from the Life die's tier).
+- `plugins/world/plugin.js`, `entranceInsert`, `sendEntrance`, `judgeEntrance`, `markCastResult`, `castLog`: the firm note, putting it into the request, judging the carrier reply (came / asked again / given up), and the line in `world/dice/<chatId>.json`.
+- `plugins/world/plugin.js`, `castStatus`, `castRoute`: `GET /world/cast`, the bench as the chat stands (for the panel and for testing).
+- `plugins/world/plugin.js`, `benchEntries`, `benchInput`, `applyBench`, `joinPeople`, `benchRoute`: adoption of the cards' lorebook people as linked records (one build call; `POST /world/bench`, and the Start step `{ bench: true }`).
+- `plugins/world/plugin.js`, `benchConstant`, `entryOf`: a linked stub of weight 1 or more is a constant entry (the heaviest 8); a dormant record is a disabled one.
+- `src/components/world/world-cast.tsx`, `CastCard`, `castLine`: the chat sheet's card "People coming back" (Frequency, the testing switch, the bench, the log, the adopt button); `src/components/chat/dice-note.tsx` draws the mark under the reply.
 - `plugins/world/plugin.js`, `applyCarry`: wear and carry, used only when carrySource is `dm`.
 - `plugins/world/plugin.js`, `applyLevel`: front add, tick and retire; the pending event; the deck card pick.
 - `plugins/world/plugin.js`, `tickClocks`: code clock ticks, one d6 per active front.
@@ -47,9 +54,9 @@ Verified at: molfar.vertep-roleplay 1c71ed1 (sections: Owners, Data, Traps); e09
 - `src/components/world/world-settings.tsx`, `WorldSettingsDialog`: level, cadence and other settings.
 
 ## Data
-- `world/state/<chatId>.json`: settings, cursors (lastKey, levelKey), `entities` (ids like `n3`), `fronts` (ids `f1`), `event`, `deck` (`[{ id: "e1", text }]`), `carry`, `clockReplies`, `log`, `usage`.
+- `world/state/<chatId>.json`: settings (also `cast` and `castShow`), cursors (lastKey, levelKey), `entities` (ids like `n3`), `fronts` (ids `f1`), `event`, `entrance` and `lastEntrance` (a person coming back, and the last one judged), `deck` (`[{ id: "e1", text }]`), `carry`, `clockReplies`, `log`, `usage`.
 - `world/snaps/<chatId>.json`: up to 8 snapshots `{ upTo, at, head, core }`.
-- `world/dice/<chatId>.json`: the newest 60 rolls.
+- `world/dice/<chatId>.json`: the newest 60 rolls, and the returns of the cast (`kind: "cast"`, with who, why, the dice and the `result`).
 - `lorebooks/world-<chatId>.json`: the world book; one entry per record, memo `world:<id>`.
 - `world/config.json`, `world/profiles/`, `world/recipes/`, `world/library/`: see `docs/DATA-FORMATS.md`, "World DM". `world/config.json` also holds `defaultProfile` (a level above the chronicler or an own `p-...` id; empty = the chronicler; the DM "off" is never a default), read only for a chat with no state file.
 
@@ -78,6 +85,7 @@ Verified at: molfar.vertep-roleplay 1c71ed1 (sections: Owners, Data, Traps); e09
 The DM's system prompt is never sent with the reply. Records reach the reply through the world book.
 
 ## If you change X, also touch Y
+- Cast fields, thresholds or bands: `cleanEntity`, `cleanEntrance`, `CAST_SILENCE`, `CAST_GAP`, `rollEntrance`, `docs/DATA-FORMATS.md` ("Cast"), the guide page `world-dm`, and the `world cast` row of `insertCeiling` here and of `hookInsertBreakdown` in `plugins/engine/plugin.js`.
 - Clock sizes or front fields: `cleanFront`, `applyLevel`, `clockStage`, `docs/DATA-FORMATS.md`.
 - Dice bands or tilts: `DICE_BANDS`, `DICE_TILTS`, `diceOutcome`, `src/lib/world.ts`, `dice-log.tsx`.
 - Record kinds or fields: `KINDS`, `cleanEntity`, `applyReport`, `entryOf`, and `docs/COUPLINGS.md`, "World DM and Dashboard shared ids".
@@ -85,6 +93,9 @@ The DM's system prompt is never sent with the reply. Records reach the reply thr
 - Deck size: `DECK_MIN`, `DECK_MAX`, `cleanDeck`, `DECK_SYSTEM`.
 
 ## Traps
+- The cast reads the chat and the Dashboard's snapshots every request (`castContext`, `silenceOf` looks back 400 messages) and stores no counter, so a swipe cannot corrupt it. Without the Dashboard (no snapshots) only the names count. A chat whose state file is older than the cast has `settings.cast` absent, which reads as off.
+- `entrance` is not `event`: it has its own judge (`judgeEntrance`, by code, no model) and works at the chronicler level too. It still rides `reconcile` (a carrier reply that is gone sends it again).
+- A name of 5 or more letters matches with a short ending and a changed last letter; a shorter one exactly. A shared nickname (one the registry gives to two people) counts for nobody.
 - A default profile reaches a chat only through `startSettings`, at the first state of a chat that has no file. A chat that already has a state file never takes a new default, and a default that was deleted or never existed falls back to the chronicler quietly.
 - `DECK_MIN` (8) is a request in the deck prompt, not a limit: `deckRoute` keeps whatever the model returns (even one card) and only flags `short: true`, which the client shows as a warning. No retry.
 - The roll_dice tool in `plugins/tools/plugin.js` uses Math.random and is not logged by World. World's dice are seeded per chat, message and swipe.
@@ -101,6 +112,7 @@ The DM's system prompt is never sent with the reply. Records reach the reply thr
 - `test/rp-world-stage3.test.ts`: deck cards.
 - `test/rp-world-ids.test.ts`, `test/rp-registry-bridges.test.ts`: applyReport and applyLevel with the registry.
 - `test/rp-tools.test.ts`: rollDice.
+- `test/rp-world-cast.test.ts`: record shape, silence by id and by names, the die and the bands, who is due, the note, the whole way through `llmRequest` (sent, came, missed, swipe, Life), the bench route and the Start step, the status route, the player's edits.
 
 ## Not verified
 - The Dashboard scene sensor (sceneOf, directionOf, sensorCarry): only called.
