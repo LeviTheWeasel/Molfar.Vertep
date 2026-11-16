@@ -43,9 +43,13 @@ export function readLimits(raw: unknown): { passes: number; concurrency: number 
   return { passes: whole(l.passes, PASSES_DEFAULT, PASSES_MAX) ?? PASSES_DEFAULT, concurrency: whole(l.concurrency, 1, CONCURRENCY_MAX), executionMs: whole(l.executionMs, EXEC_MS_DEFAULT, EXEC_MS_MAX) ?? EXEC_MS_DEFAULT };
 }
 
-/** How long one route of this plugin may run, in ms: its manifest's `limits.executionMs` for a plugin with origin "local", 0 (the engine's default) for any other. Every method counts: a send on a slow phone needs it as much as a read (#391, and the same error on POST /chats/:id/send). */
+/** How long one pass of this plugin's route or hook may run, in ms: its manifest's `limits.executionMs` (10 to 30 s;
+ *  the engine's 10 s without it). Every plugin gets it, imported ones too: an app installed or updated from its
+ *  repository has all its plugins marked "imported", so a limit kept for "local" ones never reached the Roleplay
+ *  plugin people actually run, and a send on a phone still stopped at 10 s after 1.16.3 and 1.16.7 (#391, #422).
+ *  It adds nothing an imported plugin could not already take: `limits.passes` gives it up to 12 passes of 10 s. */
 export function routeExecutionMs(manifest: { origin?: unknown; limits?: unknown }): number {
-  return manifest.origin === "local" ? readLimits(manifest.limits).executionMs : 0;
+  return readLimits(manifest.limits).executionMs;
 }
 
 /** Does this error say the provider is refusing for speed? The error text is all that reaches us. */

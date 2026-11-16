@@ -958,7 +958,7 @@ export async function runPluginRoute(
   // (the Roleplay Agents plugin) before the importer was even asked. The archive travels once, as
   // `zipBase64`, to the plugins that hold the "zip" permission.
   const ctxBody = bodyWithoutZip(req.body);
-  // a route of a trusted plugin may ask for more than the default 10 s (a slow phone, a big library, a long chat: #391; a send hit it too)
+  // a plugin may ask for more than the default 10 s (a slow phone, a big library, a long chat: #391, #422)
   const readMs = routeExecutionMs(plugin.manifest);
   const zipLimits = zipOk ? { executionTimeoutMs: 120_000, memoryLimitBytes: 512 * 1024 * 1024 } : readMs > 10_000 ? { executionTimeoutMs: readMs } : {};
   // a generation ends when the ROUTE ends, not when its model call does: the commit comes in a
@@ -1109,9 +1109,9 @@ export interface PluginManifest {
    *  other. `concurrency`: the requests of one round run side by side, up to this
    *  many (1 to 4), spaced out, and one the provider refused with a 429 is tried
    *  again after a pause. Absent: one request after another, as before.
-   *  `executionMs`: how long one route (any method) may run, 10000 to 30000, default 10000;
-   *  for a plugin that reads a big library or assembles a long chat on a slow phone. Only a plugin with origin
-   *  "local" gets it: an imported one keeps the default. */
+   *  `executionMs`: how long one pass of a route (any method) or a hook may run, 10000 to 30000, default 10000;
+   *  for a plugin that reads a big library or assembles a long chat on a slow phone. Imported plugins get it too
+   *  (an app installed from its repository has every plugin marked imported, #422). */
   limits?: PluginLimits;
 }
 
@@ -1172,6 +1172,9 @@ async function hookPasses(
   let results = noResults();
   let current: Record<string, unknown> = ctx;
   const maxPasses = passLimit(plugin);
+  // the plugin's own limit, as for its routes (an llmRequest hook runs before every reply: #422); an explicit one wins
+  const ownMs = routeExecutionMs(plugin.manifest);
+  const passLimits = limits ?? (ownMs > 10_000 ? { executionTimeoutMs: ownMs } : {});
 
   for (let pass = 0; pass < maxPasses; pass++) {
     const r = await box.eval({
@@ -1191,7 +1194,7 @@ async function hookPasses(
       fsAllowed: hasCapAny(plugin, "fs", deps) && !!plugin.fsRoot,
       fsRoot: plugin.fsRoot ?? null,
       peers: peersOf(plugin, deps),
-      ...(limits ?? {}),
+      ...passLimits,
     });
 
     applyStoreWrites(plugin, r, deps);

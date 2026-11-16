@@ -1,5 +1,5 @@
 # App plugins: the sandbox, the host API, hooks and limits
-Verified at: molfar.vertep 1593219; Timing and the Traps on a shared worker at branch claude/sandbox-timing (1.16.8)
+Verified at: molfar.vertep 1593219; Timing and the Traps on a shared worker at branch claude/sandbox-timing (1.16.8); `executionMs` for every plugin and its hooks at branch claude/limits-imported (1.16.9)
 
 ## What it does
 An app plugin is `plugins/<id>/plugin.js` with a `manifest.json` beside it, inside an app folder. Each call evaluates the current source in a QuickJS runtime owned by a pooled worker thread. The plugin asks for models and the network through `host`, and the engine does that work between passes. A call that fails or overruns ends its worker. Manifest permissions gate each capability.
@@ -41,7 +41,7 @@ Every call gets `host` from `src/plugins/sandbox-worker.mjs`. Permission in brac
 ## Hooks a plugin can export
 | Export | When it is called | Time limit |
 |---|---|---|
-| `handleRoute(ctx, host)` | An app request that reaches the plugin [routes] | 10 s execution, 20 s wall, per pass; 3 passes, up to 12. A plugin with origin `local` may ask for 10 to 30 s for every method with `limits.executionMs` (`routeExecutionMs` in llm-pace.ts; the Roleplay engine plugin asks for 30 s, since 1.16.7 for a send too: #391) |
+| `handleRoute(ctx, host)` | An app request that reaches the plugin [routes] | 10 s execution, 20 s wall, per pass; 3 passes, up to 12. Any plugin may ask for 10 to 30 s with `limits.executionMs`, for every method of its routes and for its hooks (`routeExecutionMs` in llm-pace.ts; until 1.16.9 only for origin `local`, which an installed app never is: #391, #422) |
 | `handleTool` with `TOOLS` | The agent calls a plugin tool [tools] | 10 s / 20 s per pass; 3 passes |
 | `onTick(ctx, host)` | Every `schedule.intervalMs`, floor 5 s [schedule] | 10 s / 20 s |
 | `uiPanel(ctx, host)` | A read of an app's `__panels` route | 10 s / 20 s |
@@ -96,7 +96,7 @@ Reload: `discoverPlugins` checks file mtimes on each app request and re-reads on
 - A full pool queues a call on the least loaded worker, and the worker's message handler is async: the two calls take turns on its one thread in small slices, and each one's clock runs for both. Measured with one worker: two calls of 1.5 s of work each both took 5.6 s. Calls of one app with `fs` cannot meet this way during a write (the gate gives a write the data folder alone), but reads of one app can, and so can calls of different apps or without `fs`.
 - Clocks apply per pass. A route with three model rounds makes three worker calls, and `runPluginRoute` sets no overall limit.
 - Store writes from a failed pass still apply: `applyStoreWrites` runs before the `!r.ok` check. Files written before a crash stay on disk, and a 500 queues no commit.
-- `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. Confirmed on `main` at 8310b23: a test in `test/plugins.test.ts` (`it.failing`, branch `claude/handbook-findings`, d8ef627) pins it. The official Roleplay plugins say `origin: "local"` in their manifests, so they are not affected; only an imported plugin that declares `hooks` is. The `llmRequest` loop gates on a declared `hooks` plus a granted `llm`; the proposed fix is the same gate here. Not changed: security code, waiting for review.
+- `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. Confirmed on `main` at 8310b23: a test in `test/plugins.test.ts` (`it.failing`, branch `claude/handbook-findings`, d8ef627) pins it. The Roleplay repository's manifests say `origin: "local"`, but installing or updating an app from its repository rewrites every bundled plugin to `imported` (`src/apps/store.ts`, `src/server/app.ts`), so installed Roleplay plugins are imported too; whether their `insertCeiling` runs depends on the grants an official install gives ("granted roleplay's bundled plugins the permissions they declare" in the log): not checked. The `llmRequest` loop gates on a declared `hooks` plus a granted `llm`; the proposed fix is the same gate here. Not changed: security code, waiting for review.
 - A manifest without `origin` is trusted: `hasCapAny` asks for grants only when origin is `imported`.
 - `PluginPermission` lists `fs:${string}`, but `hasCapAny` matches only the exact name `fs`.
 

@@ -1148,3 +1148,29 @@ describe("plugin timers", () => {
     }
   }, 30_000);
 });
+
+describe("a plugin's own time limit (limits.executionMs)", () => {
+  // An app installed from its repository has every plugin marked imported. The limit the Roleplay plugin asks for
+  // (30 s) must reach it, in its routes and in its hooks, or a send on a phone stops at 10 s (#422).
+  const busy = (ms: number) => `const end = Date.now() + ${ms}; let n = 0; while (Date.now() < end) n++;`;
+  it("an imported plugin's route and hook may run past 10 s when its manifest asks", async () => {
+    writePlugin(
+      "slow-app",
+      { name: "S", version: "1", permissions: ["routes", "hooks"], origin: "imported", limits: { executionMs: 30000 } },
+      `export function handleRoute() { ${busy(10_600)} return { status: 200, json: { n } }; }
+export function uiPanel() { ${busy(10_600)} return { n }; }`,
+    );
+    const plugin = discoverPlugins(path.join(dir, "plugins"))[0]!;
+    const route = await runPluginRoute(plugin, { method: "POST", path: "/send", query: {}, body: null }, deps(["routes", "hooks"]));
+    expect(route?.status).toBe(200);
+    const hook = await runPluginHook(plugin, "uiPanel", {}, deps(["routes", "hooks"]));
+    expect(typeof hook?.n).toBe("number");
+  }, 90_000);
+  it("without the ask, a route still stops at 10 s", async () => {
+    writePlugin("plain-app", { name: "P", version: "1", permissions: ["routes"], origin: "imported" }, `export function handleRoute() { ${busy(10_600)} return { status: 200, json: {} }; }`);
+    const plugin = discoverPlugins(path.join(dir, "plugins"))[0]!;
+    const route = await runPluginRoute(plugin, { method: "POST", path: "/send", query: {}, body: null }, deps(["routes"]));
+    expect(route?.status).toBe(500);
+    expect(String((route?.json as { error?: string } | undefined)?.error)).toMatch(/time limit/);
+  }, 60_000);
+});
