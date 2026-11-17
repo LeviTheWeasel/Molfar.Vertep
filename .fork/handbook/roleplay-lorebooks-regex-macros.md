@@ -1,5 +1,5 @@
 # Lorebooks, regex scripts and macros
-Verified at: molfar.vertep-roleplay efead2b (sections: Owners, Lorebook entry, The scan, secret entries); Owners, Traps also 4e0989b; the rest at 56bf594
+Verified at: molfar.vertep-roleplay efead2b (sections: Owners, Lorebook entry, The scan, secret entries); Owners, Traps also 4e0989b; the rest at 56bf594; scan step 14 (budget) at c603c31
 
 ## What it does
 Lorebook entries enter the prompt by keys, by constant status, or by a vector match over a threshold. One server function runs the scan, budget and placement. Regex scripts rewrite text on save, on edit, in the prompt, or only for display. Macros are expanded on the server. The browser shows why each entry fired and runs a keyword test through the same scanner.
@@ -52,7 +52,7 @@ Fields the scan reads (book shape in `docs/DATA-FORMATS.md`, "Lorebooks"):
 11. Recursion: text of newly fired entries joins the window, and the pass repeats up to `maxPasses`.
 12. `minActivations`: while too few entries fired, the window deepens, up to `minActivationsDepthMax`.
 13. `sticky` and `cooldown` state lives in `meta.wiTimed`. Dry runs leave it alone.
-14. Budget: entries sort by strategy rank, then `order` descending. Those past the budget go to `skipped`, unless `ignoreBudget` is set.
+14. Budget: entries sort by strategy rank, then `order` descending. An entry that does not fit in the room left goes to `skipped` and costs nothing, so a shorter one after it can still fire (#397; it used to stop at the first overflow); `ignoreBudget` entries are always in and still spend.
 15. Placement: admitted entries sort by rank, then `order` ascending. `WI_POSITIONS` maps `position` to a result list; `at_depth` goes to `depth`.
 
 Secret entries: each item gets `secretV` once per scan (known: content; cover; marked: content plus a "[Secret: only A knows...]" line for several voices). `contentOf` feeds the prompt, the budget and recursion. Knowers come from the chat each scan: `knownBy`, a `reveal` word in a message (taught to its author and the Dashboard's `present`), `lore-known/<chat>.json` by hand.
