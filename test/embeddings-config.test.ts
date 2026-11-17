@@ -56,7 +56,7 @@ describe("embeddings config routes", () => {
     expect((await put({ model: null })).status).toBe(200);
     expect(await get()).toMatchObject({ provider: "openrouter", model: "qwen/qwen3-embedding-4b", modelSet: false });
     await put({ model: "openai/text-embedding-3-small" });
-    const saved = JSON.parse(fs.readFileSync(userPaths(dataDir, "alice").settings, "utf8")) as Record<string, unknown>;
+    const saved = JSON.parse(fs.readFileSync(userPaths(dataDir, "alice").embed, "utf8")) as Record<string, unknown>;
     expect(saved).toMatchObject({ embedProvider: "openrouter", embedModel: "openai/text-embedding-3-small" });
   });
 

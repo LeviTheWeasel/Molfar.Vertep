@@ -1601,8 +1601,6 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
     });
   });
   app.put("/v1/embeddings/config", async (c) => {
-    const u = c.get("user");
-    const p = c.get("paths");
     const body = await c.req.json<{ model?: unknown; provider?: unknown }>().catch(() => ({}) as { model?: unknown; provider?: unknown });
     if (body.model === undefined && body.provider === undefined) {
       return c.json({ error: "model or provider required" }, 400);
@@ -1616,48 +1614,34 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
         (body.provider === "auto" || body.provider === "openrouter" || (body.provider === "local" && c.get("models").readEmbedSettings().local !== null) || c.get("models").embedProviders().some((x) => x.kind === "custom" && x.id === body.provider));
       if (!ok) return c.json({ error: "provider must be auto, openrouter, local (once a model is connected) or the id of a custom connection" }, 400);
     }
-    const settings = fs.existsSync(p.settings)
-      ? (JSON.parse(fs.readFileSync(p.settings, "utf8")) as { embedModel?: string; embedProvider?: string })
-      : {};
-    if (typeof body.model === "string") settings.embedModel = body.model.trim();
-    else if (body.model === null) delete settings.embedModel;
-    if (typeof body.provider === "string") settings.embedProvider = body.provider;
-    fs.writeFileSync(p.settings, JSON.stringify(settings, null, 2) + "\n", "utf8");
-    await git.commitAll(p.root, u.username, "settings: embeddings config set").catch(() => undefined);
+    // the choice is this device's own (#431): it never goes into settings.json, which a sync carries
     const models = c.get("models");
+    models.writeEmbedSettings({
+      ...(typeof body.model === "string" ? { model: body.model.trim() } : body.model === null ? { model: null } : {}),
+      ...(typeof body.provider === "string" ? { provider: body.provider } : {}),
+    });
     const st = models.readEmbedSettings();
     return c.json({ ok: true, model: models.embedModelName({ settings: st, openrouter: st.provider === "openrouter" }), modelSet: st.model !== null, provider: st.provider });
   });
 
   // The embeddings model that runs on this computer (#255): one button downloads it and connects it. The files
-  // are the machine's (data/embed-local), the choice of which one is connected is the user's (settings.json
-  // `embedLocal`). Shell-only: no app route reaches these.
-  const setEmbedSettings = async (p: UserPaths, username: string, patch: Record<string, unknown>): Promise<void> => {
-    const settings = (fs.existsSync(p.settings) ? JSON.parse(fs.readFileSync(p.settings, "utf8")) : {}) as Record<string, unknown>;
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === null) delete settings[k]; else settings[k] = v;
-    }
-    fs.writeFileSync(p.settings, JSON.stringify(settings, null, 2) + "\n", "utf8");
-    await git.commitAll(p.root, username, "settings: embeddings on this computer").catch(() => undefined);
-  };
-  /** Connect (or, with null, disconnect) a model for a user. A single other source chosen by hand would never
+  // are the machine's (data/embed-local), the choice of which one is connected is this device's (embeddings.json,
+  // `embedLocal`, never synced: #431). Shell-only: no app route reaches these.
+  /** Connect (or, with null, disconnect) a model on this device. A single other source chosen by hand would never
    *  reach it, so that choice goes back to "auto" (the model first, the others behind it). */
-  const connectLocal = async (p: UserPaths, username: string, id: LocalModelId | null): Promise<void> => {
-    let provider = "auto";
-    try { provider = (JSON.parse(fs.readFileSync(p.settings, "utf8")) as { embedProvider?: string }).embedProvider ?? "auto"; } catch { /* defaults */ }
-    if (id === null) await setEmbedSettings(p, username, { embedLocal: null, ...(provider === "local" ? { embedProvider: "auto" } : {}) });
-    else await setEmbedSettings(p, username, { embedLocal: id, ...(provider !== "auto" ? { embedProvider: "auto" } : {}) });
+  const connectLocal = (models: UserModelService, id: LocalModelId | null): void => {
+    const provider = models.readEmbedSettings().provider;
+    models.writeEmbedSettings({ local: id, ...(id === null ? (provider === "local" ? { provider: "auto" } : {}) : (provider !== "auto" ? { provider: "auto" } : {})) });
   };
   app.get("/v1/embeddings/local", (c) => c.json({ ...localEmbed.status(), connected: c.get("models").readEmbedSettings().local }));
   app.post("/v1/embeddings/local/download", async (c) => {
     const body = await c.req.json<{ model?: unknown }>().catch(() => ({}) as { model?: unknown });
     const def = findLocalModel(body.model);
     if (!def) return c.json({ error: "unknown model" }, 400);
-    const p = c.get("paths");
-    const username = c.get("user").username;
+    const models = c.get("models");
     try {
       // the download outlives this request: when it is done, it is connected for the user who asked
-      localEmbed.download(def.id, (id) => { void connectLocal(p, username, id); });
+      localEmbed.download(def.id, (id) => { connectLocal(models, id); });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 409);
     }
@@ -1667,12 +1651,12 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
   app.post("/v1/embeddings/local/connect", async (c) => {
     const body = await c.req.json<{ model?: unknown }>().catch(() => ({}) as { model?: unknown });
     if (body.model === null) {
-      await connectLocal(c.get("paths"), c.get("user").username, null);
+      connectLocal(c.get("models"), null);
       return c.json({ ...localEmbed.status(), connected: null });
     }
     const def = findLocalModel(body.model);
     if (!def || !localEmbed.isReady(def.id)) return c.json({ error: "that model is not downloaded" }, 409);
-    await connectLocal(c.get("paths"), c.get("user").username, def.id);
+    connectLocal(c.get("models"), def.id);
     return c.json({ ...localEmbed.status(), connected: def.id });
   });
   app.delete("/v1/embeddings/local/:model", async (c) => {
@@ -1680,7 +1664,7 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
     if (!def) return c.json({ error: "unknown model" }, 404);
     try {
       const freed = await localEmbed.remove(def.id);
-      if (c.get("models").readEmbedSettings().local === def.id) await connectLocal(c.get("paths"), c.get("user").username, null);
+      if (c.get("models").readEmbedSettings().local === def.id) connectLocal(c.get("models"), null);
       return c.json({ ...localEmbed.status(), freed, connected: c.get("models").readEmbedSettings().local });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 409);

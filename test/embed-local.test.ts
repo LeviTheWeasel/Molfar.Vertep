@@ -304,7 +304,8 @@ describe("routes", () => {
   });
   const h = () => ({ authorization: `Bearer ${token}`, "content-type": "application/json" });
   const call = (method: string, p: string, body?: unknown) => app.request(p, { method, headers: h(), ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
-  const settings = () => JSON.parse(fs.readFileSync(userPaths(dir, "alice").settings, "utf8")) as Record<string, unknown>;
+  // the device's own file (#431), not the workspace settings.json a sync carries
+  const settings = () => { try { return JSON.parse(fs.readFileSync(userPaths(dir, "alice").embed, "utf8")) as Record<string, unknown>; } catch { return {} as Record<string, unknown>; } };
 
   it("download connects the model for the user who asked, once it is done", async () => {
     const r = await call("POST", "/v1/embeddings/local/download", { model: "bge-m3" });
@@ -325,7 +326,8 @@ describe("routes", () => {
     await call("POST", "/v1/embeddings/local/download", { model: "bge-m3" });
     await finished(local);
     await Bun.sleep(30);
-    expect(settings()).toMatchObject({ embedLocal: "bge-m3", embedProvider: "auto" });
+    expect(settings().embedLocal).toBe("bge-m3");
+    expect(await (await call("GET", "/v1/embeddings/config")).json()).toMatchObject({ provider: "auto" });
   });
 
   it("another download while one runs is a 409; unknown models 400; cancel answers", async () => {

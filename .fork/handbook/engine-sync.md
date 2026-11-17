@@ -1,6 +1,6 @@
 # Sync between a user's devices
 
-Verified at: molfar.vertep 32fc4f6
+Verified at: molfar.vertep 32fc4f6 (the embeddings line on branch claude/embed-setting-device-431)
 
 ## What it does
 - Compares a user's workspace files by SHA-256 hash against one shared store: a Google Drive folder or a local folder.
@@ -43,6 +43,7 @@ Not synced:
 - `node_modules`, `*.discard-*` folders, `repos/`, `.staging` folders, `apps/<id>/dist`, `assets-store/.trash`.
 - `apps/<id>/data/.cache/` (`APP_CACHE`). Symlinks are skipped.
 - Credentials, `sync.json`, `sync-cache.json`, the refresh token and the passphrase: all outside the workspace.
+- `credentials/<user>/embeddings.json`: which embeddings source this device uses (#431). Not in `PLAIN_PRIVATE`, so neither a sync nor a profile backup carries it; the old keys in the workspace `settings.json` are moved out of it by the first read after the update (`src/embed-settings.ts`).
 
 ## One sync pass, step by step
 1. Scan: `scanLocal` lists the workspace and the four private files, reusing hashes when size and mtime match `sync-cache.json`.

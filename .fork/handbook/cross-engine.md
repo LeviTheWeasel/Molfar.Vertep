@@ -55,7 +55,7 @@ Change X, touch Y:
 - A plugin request field: `request` in src/plugins/sandbox-worker.mjs, the strip list in `runPassRequests`, `GenerateRequest` in src/models.ts, and `LLM_PATCH_FIELDS` if hooks may set it.
 - A parameter block field: `SHORT`, `NUMERIC`, `validateBlock` and `mergeParams` in src/model-params.ts.
 - A local model: `LOCAL_MODELS` (revision, sizes, sha256), the `LocalModelId` type, and `FAMILIES` in src/embed-model-names.ts if a remote copy exists.
-- Embedding order or defaults: `embed` and `readEmbedSettings` in src/models.ts, and the PUT check in src/server/app.ts.
+- Embedding order or defaults: `embed` and `readEmbedSettings` in src/models.ts, `src/embed-settings.ts`, and the PUT check in src/server/app.ts.
 - A provider wire: `buildProvider` in src/providers/custom.ts and the registration in src/models.ts. Keep `tolerantSseFetch` on custom connections.
 - Pacing: `DEFAULT_PACE` and the bounds in src/plugins/llm-pace.ts.
 - A new cache mode: `CACHE_MODES` in src/model-cache.ts, `ModelInfo.cache`, the PUT route, `CacheLifetime` in client/src/model-panel.tsx, and the "shell only" lists in test/security.test.ts and test/malicious-plugin.test.ts.

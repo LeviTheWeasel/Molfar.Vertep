@@ -23,6 +23,8 @@ export interface UserPaths {
   appReads: string;
   /** The agent sandbox's settings (internet access). */
   sandbox: string;
+  /** Which embeddings source THIS device uses (`src/embed-settings.ts`). Outside the workspace and not in PLAIN_PRIVATE, so a sync and a backup never carry it. */
+  embed: string;
   apps: string;
   plugins: string;
   assetsStore: string;
@@ -191,6 +193,7 @@ export function userPaths(dataDir: string, username: string): UserPaths {
     appReads: path.join(dataDir, "credentials", username, "app-reads.json"),
     // The agent could otherwise switch its own internet access back on.
     sandbox: path.join(dataDir, "credentials", username, "sandbox.json"),
+    embed: path.join(dataDir, "credentials", username, "embeddings.json"),
     apps: path.join(root, "apps"),
     plugins: path.join(root, "plugins"),
     assetsStore: path.join(root, "assets-store"),
