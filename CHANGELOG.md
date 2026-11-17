@@ -7,10 +7,13 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+## 1.17.0 (2026-11-17)
+
 - **Updates dialog, apps with no update source (#318).** An app made on this device or copied in by hand now gets a quiet row too ("No update source", with a reason), next to the apps installed from a zip, so "where is my app" has an answer there.
 - **The engine row's warning about apps names the right thing (#318).** It said an app "needs a different version of Molfar Vertep" and "may stop working after the update", but the app's `engine` range is checked against the app contract, not the release, and the apps named already failed today. It now says "app contract", shows the contract this engine supports, and lists only your own apps (it scanned every account's).
 - **An app whose `engine` range this engine cannot satisfy is refused at install (#318).** A Git or Store install and a zip import stop with a message saying which contract the app asks for and which this engine has; before, the mistake (a release number such as `>=1.12.0` written there) showed only at the app's first update.
-- **The build-failed card tells a first build from a later one (#337).** When no build of an app has ever finished, the card and the app's own window say the first build failed and there is nothing to show yet, instead of "the app shows its last good build".
+- Tooling: the browser-check skill's echo board compiles again, its Allow helper goes through "Review permissions", and the browser starts in English (#407).
+- **The build-failed card tells a first build from a later one (#337).** When no build of an app has ever finished, the card and the app's own window say the first build failed and there is nothing to show yet, instead of "the app shows its last good build". Carries **Roleplay 4.136.2** as an app update: a lorebook file in the app's own format keeps its names, folders and settings on import (#295), a message you stopped no longer comes back into the box (#384), and the gallery's attach keeps the 8-attachment cap.
 
 ## 1.16.10 (2026-11-17)
 
