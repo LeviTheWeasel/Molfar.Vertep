@@ -275,7 +275,7 @@ function ReleaseRow(props: { info: ServerInfo }) {
 export function IncompatibleNote(props: { release: EngineRelease }) {
   const apps = props.release.incompatibleApps
   if (!apps?.length) return null
-  return <p className="text-12 leading-4 text-warning">{tr("These apps say they need a different version of Molfar Vertep and may stop working after the update: {apps}", { apps: apps.map((a) => `${a.name} (${a.needs})`).join(", ") })}</p>
+  return <p className="text-12 leading-4 text-warning">{tr("These apps ask for an app contract this engine does not have, so they may not run or update: {apps}. This engine supports app contract {contract}.", { apps: apps.map((a) => `${a.name} (${a.needs})`).join(", "), contract: props.release.contract ? `v${props.release.contract}` : "" })}</p>
 }
 
 export function InstallRow(props: { release: EngineRelease }) {

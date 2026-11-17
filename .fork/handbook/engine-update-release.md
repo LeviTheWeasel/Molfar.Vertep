@@ -1,6 +1,6 @@
 # Install, update and release: the engine, the apps, the Store
 
-Verified at: molfar.vertep 8310b23
+Verified at: molfar.vertep 2c6d4d0
 
 ## What it does
 - A downloaded engine program replaces itself from its release archive. A source checkout runs `Molfar-Vertep.bat`, which checks out the newest release tag, or the newest work branch with `dev`.
@@ -47,6 +47,9 @@ Verified at: molfar.vertep 8310b23
 Install (`POST /v1/apps/import`, which clones with `gitClone`):
 1. The first request clones into `apps/.staging/<slug>` and reads `manifest.json`. A missing or invalid manifest gives 422. The response is a preview.
 2. A second request with `confirm` completes the install (not read in full).
+3. `contractProblem` (`src/server/app.ts`) refuses an app whose `engine` range `APP_API_VERSION` does not satisfy: 409 at the preview and again at the confirm, staging cleared. A zip import (`previewFileImport`, `confirmFileImport`) does the same (#318). An unreadable range counts as not satisfied.
+
+The Updates dialog list is `GET /v1/apps/updates`: every app with an install source gets a head check; every app without one is added with `noSource`, "file" when its manifest names a repository (installed from a zip) and "local" when it names none (made here or copied in). The engine row's warning comes from `GET /v1/admin/server/release`: `incompatibleApps` holds the viewer's own apps whose range is outside the app contract that exists today, and `contract` is `APP_API_VERSION`.
 
 Update (`POST /v1/apps/:id/update`, which calls `updateApp`):
 1. Refused with 400 unless the app has a recorded install source.
@@ -107,7 +110,6 @@ These files were checked for existence only; their contents were not read.
 
 ## Not verified
 - The contents of the test files, and whether they pass.
-- Whether the import preview refuses an app whose `engine` range does not match. Only the update route was read.
 - The exact order of merge, `onAppUpdate` and package install in `updateApp`.
 - The `confirm` step of `POST /v1/apps/import`.
 - The client code for Settings > Server and the Store page.
