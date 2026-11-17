@@ -15,7 +15,7 @@ async function compile(file) {
 const node = (id, type, x, y, title, params) => ({ id, type, x, y, title, params })
 const wire = (id, from, to) => ({ id, from, to })
 
-/** A text field the model fills, shown by a float panel with an `html` widget (and a plain text widget for comparison).
+/** A text field the model fills, shown by a float panel with an `html` widget in bind mode (and a plain text widget for comparison).
  *  The model's sentence goes into `said` as it is: this is where hostile text from a model would land. */
 export function echoBoard({ version = "1.0.0", extraSource = false } = {}) {
   return compile({
@@ -30,7 +30,8 @@ export function echoBoard({ version = "1.0.0", extraSource = false } = {}) {
       panels: [{
         id: "board", title: "Echo", place: "float",
         widgets: [
-          { w: "html", bind: "said", height: 140, template: '<div style="padding:6px;border:1px solid #888"><b>Said:</b> <span>{{said}}</span> <i>{{#if said}}(set){{/if}}</i></div>' },
+          // bind mode: the model's text is the markup, the case the frame has to seal (a template and a bind together do not compile)
+          { w: "html", bind: "said", height: 140 },
           { w: "text", label: "Plain", bind: "said" },
         ],
       }],

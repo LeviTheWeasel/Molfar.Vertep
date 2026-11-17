@@ -95,9 +95,19 @@ export async function uploadAgent(page, app, file, id, { version } = {}) {
   return card
 }
 
-/** Press Allow on an agent's card when it has one. */
+/** Allow an agent: on its card either an Allow button (older builds) or "Review permissions · N", which opens a dialog with "Allow all" (and "Done"). Does nothing when the agent is already allowed. */
 export async function allowAgent(page, app, id) {
-  const btn = app.getByTestId(`agent-card-${id}`).getByRole("button", { name: "Allow" })
+  const card = app.getByTestId(`agent-card-${id}`)
+  const review = card.getByRole("button", { name: /^Review permissions/ })
+  if (await review.isVisible().catch(() => false)) {
+    await review.click()
+    await app.getByRole("button", { name: /^Allow all$/ }).click()
+    await app.getByRole("button", { name: /^Done$/ }).click().catch(() => {})
+    await review.waitFor({ state: "detached", timeout: 15000 })
+    await page.waitForTimeout(500)
+    return
+  }
+  const btn = card.getByRole("button", { name: "Allow" })
   if (await btn.isVisible().catch(() => false)) { await btn.click(); await btn.waitFor({ state: "detached", timeout: 15000 }); await page.waitForTimeout(500) }
 }
 

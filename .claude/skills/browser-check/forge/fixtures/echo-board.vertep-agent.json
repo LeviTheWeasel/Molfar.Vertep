@@ -110,8 +110,7 @@
           {
             "w": "html",
             "bind": "said",
-            "height": 140,
-            "template": "<div style=\"padding:6px;border:1px solid #888\"><b>Said:</b> <span>{{said}}</span> <i>{{#if said}}(set){{/if}}</i></div>"
+            "height": 140
           },
           {
             "w": "text",
@@ -129,7 +128,7 @@
         "write:own.said"
       ],
       "maxCalls": 1,
-      "hash": "sha256:7e2ef303ffa3f77759fa5487f28aab11441a05b4612bcaa8e980d9baef61c446"
+      "hash": "sha256:5fe1fea4e3fed4f1cadebca919d34f5d7d631b99f7da5bb01700d8d5dee9a061"
     }
   }
 }
