@@ -1,4 +1,4 @@
-<!-- source: abe560e8cdbc -->
+<!-- source: b34e59fa6a0c -->
 # Appareils, synchronisation et sauvegardes
 
 Comment utiliser Molfar Vertep sur un téléphone, transporter vos histoires entre appareils, l’installer comme une app et déménager vers un nouvel ordinateur.
@@ -13,7 +13,7 @@ Dans Paramètres, Serveur, « Autoriser les autres appareils de mon réseau » p
 
 ## Synchro
 
-« Synchroniser les appareils » dans le menu du compte, ou Paramètres, Synchro. Connectez-vous avec Google une fois sur chaque appareil. Quand vous arrêtez de jouer, appuyez sur « Envoyer » ; sur l’autre appareil appuyez sur « Récupérer » et continuez. Après la première fois, seuls les changements circulent.
+« Synchroniser les appareils » dans le menu du compte, ou Paramètres, Synchro. Connectez-vous avec Google une fois sur chaque appareil. Quand vous arrêtez de jouer, appuyez sur « Envoyer » ; sur l’autre appareil appuyez sur « Récupérer » et continuez. Après la première fois, seuls les changements circulent. Le modèle d’embeddings qu’un appareil utilise (Paramètres, Mémoire) n’est pas synchronisé : chaque appareil garde son propre choix.
 
 - Vous choisissez ce qui circule : les apps et leurs données, les chats et projets de Molfar, les images, le son et la vidéo, ainsi que les clés API et les paramètres MCP. Les clés ne circulent que si vous les activez, verrouillées par une phrase secrète que vous saisissez sur chaque appareil.
 - Si le même chat a changé sur les deux appareils, vous choisissez la version à garder. L’autre est conservée pendant 30 jours.

@@ -1,4 +1,4 @@
-<!-- source: abe560e8cdbc -->
+<!-- source: b34e59fa6a0c -->
 # Dispositivi, sincronizzazione e backup
 
 Come usare Molfar Vertep su un telefono, portare le tue storie tra i dispositivi, installarlo come un'app e passare a un nuovo computer.
@@ -13,7 +13,7 @@ In Impostazioni, Server, "Consenti altri dispositivi della mia rete" permette a 
 
 ## Sincronizzazione
 
-"Sincronizza dispositivi" nel menu account, o Impostazioni, Sincronizzazione. Accedi con Google una volta su ogni dispositivo. Quando smetti di giocare, premi "Invia"; sull'altro dispositivo premi "Ricevi" e continua. Dopo la prima volta viaggia solo ciò che è cambiato.
+"Sincronizza dispositivi" nel menu account, o Impostazioni, Sincronizzazione. Accedi con Google una volta su ogni dispositivo. Quando smetti di giocare, premi "Invia"; sull'altro dispositivo premi "Ricevi" e continua. Dopo la prima volta viaggia solo ciò che è cambiato. Quale modello di embedding usa un dispositivo (Impostazioni, Memoria) non viene sincronizzato: ogni dispositivo conserva la propria scelta.
 
 - Scegli tu cosa viaggia: app e i loro dati, chat e progetti di Molfar, immagini, audio e video, e chiavi API con impostazioni MCP. Le chiavi viaggiano solo se le attivi, protette da una passphrase che digiti su ogni dispositivo.
 - Se la stessa chat è cambiata su entrambi i dispositivi, scegli quale versione tenere. L'altra viene salvata per 30 giorni.

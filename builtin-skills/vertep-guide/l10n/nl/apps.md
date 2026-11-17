@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Apps
 
 Hoe je apps vindt, toevoegt, bijwerkt en verwijdert. Apps zijn de dingen die je echt gebruikt: Roleplay is de belangrijkste.
@@ -39,7 +39,7 @@ Een officiële app, zoals Social, kan Molfar Vertep laten weten dat er iets op j
 
 ## Updates
 
-Het downloadpictogram in de bovenste balk krijgt een stip wanneer er iets wacht. Het toont elke app met een updatebron en heeft "Nu controleren". Een app die vanuit een bestand (een zip) is geïnstalleerd, toont "Geen updatebron": hij kan hier niet worden bijgewerkt. Om updates te krijgen, installeer je hem vanuit de Store; die kopie is een aparte app, dus exporteer het bestand eerst als het gegevens bevat die je wilt bewaren (het prullenbakpictogram verwijdert een app en zijn gegevens). "Alles bijwerken" verschijnt wanneer twee of meer apps wachten en omvat nooit Molfar Vertep zelf.
+Het downloadpictogram in de bovenste balk krijgt een stip wanneer er iets wacht. Het toont elke app en heeft "Nu controleren". Een app zonder updatebron toont "Geen updatebron" en een korte reden. Een app die vanuit een bestand (een zip) is geïnstalleerd, kan hier niet worden bijgewerkt: om updates te krijgen, installeer je hem vanuit de Store; die kopie is een aparte app, dus exporteer het bestand eerst als het gegevens bevat die je wilt bewaren (het prullenbakpictogram verwijdert een app en zijn gegevens). Een app die op dit apparaat is gemaakt (door Molfar bijvoorbeeld) of met de hand is gekopieerd, heeft helemaal geen bron om bij te werken. Het installeren van een app waarvan het `engine`-bereik een app-contract noemt dat deze engine niet heeft (een Molfar Vertep-versienummer dat daar per ongeluk staat, telt mee) wordt geweigerd met een melding die dat zegt; de engine-regel in het updatevenster noemt geïnstalleerde apps die nu al niet passen. "Alles bijwerken" verschijnt wanneer twee of meer apps wachten en omvat nooit Molfar Vertep zelf.
 
 Je eigen wijzigingen worden samengevoegd met een update en je gegevens blijven behouden. Waar je wijzigingen overlappen met de nieuwe versie verandert er nog niets: je kiest "Mijn versie behouden", "Update overnemen" of "Vraag Molfar om samen te voegen". Een update die nieuwe pakketten installeert of nieuwe rechten vraagt, wacht op je akkoord.
 

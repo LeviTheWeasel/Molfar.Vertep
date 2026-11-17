@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Aplikacje
 
 Jak znajdować, dodawać, aktualizować i usuwać aplikacje. Aplikacje to rzeczy, których faktycznie używasz: Roleplay jest tą główną.
@@ -39,7 +39,7 @@ Oficjalna aplikacja, na przykład Social, może powiedzieć Molfar Vertep, że c
 
 ## Aktualizacje
 
-Ikona pobierania na górnym pasku dostaje kropkę, gdy coś czeka. Wyświetla wszystkie aplikacje ze źródłem aktualizacji i ma „Sprawdź teraz”. Aplikacja zainstalowana z pliku (zip) pokazuje „Brak źródła aktualizacji”: nie można jej tu zaktualizować. Aby dostawać aktualizacje, zainstaluj ją ze Store; ta kopia jest osobną aplikacją, więc najpierw wyeksportuj plik, jeśli zawiera dane, które chcesz zachować (ikona kosza usuwa aplikację i jej dane). „Aktualizuj wszystko” pojawia się, gdy czekają dwie lub więcej aplikacji, i nigdy nie obejmuje samego Molfar Vertep.
+Ikona pobierania na górnym pasku dostaje kropkę, gdy coś czeka. Wyświetla wszystkie aplikacje i ma „Sprawdź teraz”. Aplikacja bez źródła aktualizacji pokazuje „Brak źródła aktualizacji” i krótki powód. Aplikacji zainstalowanej z pliku (zip) nie można tu zaktualizować: aby dostawać aktualizacje, zainstaluj ją ze Store; ta kopia jest osobną aplikacją, więc najpierw wyeksportuj plik, jeśli zawiera dane, które chcesz zachować (ikona kosza usuwa aplikację i jej dane). Aplikacja utworzona na tym urządzeniu (na przykład przez Molfar) albo skopiowana ręcznie nie ma w ogóle źródła, z którego mogłaby się aktualizować. Instalacja aplikacji, której zakres `engine` wskazuje kontrakt aplikacji, jakiego ten silnik nie ma (liczy się też numer wersji Molfar Vertep wpisany tam przez pomyłkę), jest odrzucana z komunikatem; wiersz silnika w oknie aktualizacji wymienia zainstalowane aplikacje, które już nie pasują. „Aktualizuj wszystko” pojawia się, gdy czekają dwie lub więcej aplikacji, i nigdy nie obejmuje samego Molfar Vertep.
 
 Twoje własne zmiany są scalane z aktualizacją, a Twoje dane są zachowywane. Tam, gdzie Twoje zmiany nakładają się na nową wersję, nic się jeszcze nie zmienia: wybierasz „Zachowaj moją”, „Przyjmij aktualizację” lub „Poproś Molfara o scalenie”. Aktualizacja, która instaluje nowe pakiety lub prosi o nowe uprawnienia, czeka na Twoją zgodę.
 

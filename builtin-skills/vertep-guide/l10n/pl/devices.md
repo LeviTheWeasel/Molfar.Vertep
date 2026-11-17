@@ -1,4 +1,4 @@
-<!-- source: abe560e8cdbc -->
+<!-- source: b34e59fa6a0c -->
 # Urządzenia, synchronizacja i kopie zapasowe
 
 Jak używać Molfar Vertep na telefonie, przenosić swoje historie między urządzeniami, instalować go jak aplikację i przenosić na nowy komputer.
@@ -13,7 +13,7 @@ W Ustawieniach, Serwerze „Zezwól innym urządzeniom w mojej sieci” pozwala 
 
 ## Synchronizacja
 
-„Synchronizuj urządzenia” w menu konta lub Ustawienia, Synchronizacja. Zaloguj się przez Google raz na każdym urządzeniu. Gdy kończysz grę, naciśnij „Wyślij”; na drugim urządzeniu naciśnij „Pobierz” i graj dalej. Po pierwszym razie podróżują tylko zmiany.
+„Synchronizuj urządzenia” w menu konta lub Ustawienia, Synchronizacja. Zaloguj się przez Google raz na każdym urządzeniu. Gdy kończysz grę, naciśnij „Wyślij”; na drugim urządzeniu naciśnij „Pobierz” i graj dalej. Po pierwszym razie podróżują tylko zmiany. To, jakiego modelu embeddingów używa urządzenie (Ustawienia, Pamięć), nie jest synchronizowane: każde urządzenie zachowuje własny wybór.
 
 - Ty wybierasz, co podróżuje: aplikacje i ich dane, czaty i projekty Molfara, obrazy, dźwięk i wideo oraz klucze API z ustawieniami MCP. Klucze podróżują tylko, jeśli je włączysz, zabezpieczone frazą hasła, którą wpisujesz na każdym urządzeniu.
 - Jeśli ten sam czat zmienił się na obu urządzeniach, wybierasz, którą wersję zachować. Druga jest zapisywana na 30 dni.
