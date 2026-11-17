@@ -1,5 +1,5 @@
 # Engine: models, connections, model calls and embeddings
-Verified at: molfar.vertep 5b6f37a (the cache lifetime lines on branch claude/cache-keepalive-112)
+Verified at: molfar.vertep 5b6f37a (the cache lifetime lines on branch claude/cache-keepalive-112; the device-local choice lines on branch claude/embed-setting-device-431)
 
 ## What it does
 - A connection is a user's provider entry; its credentials are read by `readAuth`. `UserModelService` in src/models.ts turns connections into a model list and runs every generation.
@@ -61,6 +61,7 @@ Verified at: molfar.vertep 5b6f37a (the cache lifetime lines on branch claude/ca
 ## Embeddings
 - `host.llm.embed(key, {texts, model?, kinds?})` in one pass; `embedResults[key]` and `embedInfo[key]` ({model, via}) arrive next pass. At most 8 per pass (`sandbox-worker.mjs`). `kinds` marks query or document text.
 - `embed` drops blank texts and cuts each text at 8000 characters; the runtime (`alignEmbeddings` in `src/embed-model-names.ts`) hands a plugin one entry per text, `null` for a blank one, so `texts[i]` pairs with `embedResults[key][i]`. `embedProvider` picks the source: "local" is the downloaded model only; the `OPENROUTER_PROVIDER_ID` value uses the fixed `OPENROUTER_EMBED_URL`; a connection id is that connection only; "auto" tries local file, local-server connections, keyed remote ones, then the fixed endpoint. Null means none answered; callers fall back to lexical search.
+- The choice (`embedProvider`, `embedModel`, `embedLocal`) is the device's own (#431): `src/embed-settings.ts` keeps it in `credentials/<user>/embeddings.json` (`UserPaths.embed`), outside the workspace and not in `PLAIN_PRIVATE`, so a sync and a backup never carry it. `UserModelService.readEmbedSettings` and `writeEmbedSettings` are the only readers and writers. A device with no file takes over the old keys of the workspace's `settings.json` once (a connected local model that is not ready here is dropped, "local" goes back to "auto") and removes them there; with a file, the old keys are ignored. A connection to a local server in `connections.json` is still synced; "auto" skips one that does not answer.
 - Local: `LocalEmbedder.embed` adds the query or document prefix from the catalog entry, pools as the entry says, and unloads after `idleMs` idle.
 - Remote: `embedRequest` POSTs `{model, input}` with a 20 s timeout. A remote address must be https and needs a usable key; a local one may skip the key.
 - Names: `embedModelUsed` stores the canonical name. Defaults: `DEFAULT_EMBED_MODEL`, `DEFAULT_OPENROUTER_EMBED_MODEL`.
@@ -84,7 +85,7 @@ Verified at: molfar.vertep 5b6f37a (the cache lifetime lines on branch claude/ca
 - A plugin request field: `request` in src/plugins/sandbox-worker.mjs, the strip list in `runPassRequests`, `GenerateRequest` in src/models.ts, and `LLM_PATCH_FIELDS` if hooks may set it.
 - A parameter block field: `SHORT`, `NUMERIC`, `validateBlock` and `mergeParams` in src/model-params.ts.
 - A local model: `LOCAL_MODELS` (revision, sizes, sha256), the `LocalModelId` type, and `FAMILIES` in src/embed-model-names.ts if a remote copy exists.
-- Embedding order or defaults: `embed` and `readEmbedSettings` in src/models.ts, and the PUT check in src/server/app.ts.
+- Embedding order or defaults: `embed` and `readEmbedSettings` in src/models.ts, `src/embed-settings.ts`, and the PUT check in src/server/app.ts.
 - A provider wire: `buildProvider` in src/providers/custom.ts and the registration in src/models.ts. Keep `tolerantSseFetch` on custom connections.
 - Pacing: `DEFAULT_PACE` and the bounds in src/plugins/llm-pace.ts.
 - A new cache mode: `CACHE_MODES` in src/model-cache.ts, `ModelInfo.cache`, the PUT route, `CacheLifetime` in client/src/model-panel.tsx, and the "shell only" lists in test/security.test.ts and test/malicious-plugin.test.ts.

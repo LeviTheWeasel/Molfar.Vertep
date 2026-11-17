@@ -9,6 +9,9 @@ This file is the short, current one (cut from 488 KB on 2026-11-14). Sections ol
 `STATE, "SOME SECTION"` may point into the archive: `grep -ri "SOME SECTION" .fork/state-archive`.
 When this file passes about 60 KB again, move the sections older than a week the same way.
 
+## Where things stand (2026-11-17)
+- **#431 built on engine branch `claude/embed-setting-device-431` (not merged, not released).** The embeddings choice (`embedProvider`, `embedModel`, `embedLocal`) moved out of the synced `settings.json` into `credentials/<user>/embeddings.json` (`src/embed-settings.ts`, `UserPaths.embed`), so a computer with a local model no longer breaks a phone that has only an online connection. A device without the file takes the old keys over once (a local model not ready here is dropped, "local" goes back to "auto") and removes them from `settings.json`. Checked: `test/embed-settings.test.ts` (two devices through a sync, a backup, the take-over), the embeddings, models and sync tests, typecheck; the full suite on this Windows machine has 34 failures (symlinks, tar, git, 0600), the four credential ones fail the same on main. Not checked: a real computer with a local model plus a phone; the real Settings > Memory page after the move. Left as it was: `connections.json` (a localhost connection) still syncs. #94 closed, its leftovers are #432.
+
 ## Where things stand (2026-11-16)
 - Engine: `main` carries 1.16.6 (prompt cache lifetime, PR 413/414). Nothing waits for an engine release.
 - Roleplay: `main` carries 4.128.0 (released 2026-11-16, PR 145: #415, #416; before it 4.127.0, PRs 141 to 144). The owner presses Update on Roleplay. Social: `main` carries 0.15.1.

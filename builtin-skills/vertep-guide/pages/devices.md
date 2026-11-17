@@ -12,7 +12,7 @@ In Settings, Server, "Allow other devices on my network" lets a phone or another
 
 ## Sync
 
-"Sync devices" in the account menu, or Settings, Sync. Sign in with Google once on each device. When you stop playing, press "Push"; on the other device press "Pull" and go on. After the first time only what changed travels.
+"Sync devices" in the account menu, or Settings, Sync. Sign in with Google once on each device. When you stop playing, press "Push"; on the other device press "Pull" and go on. After the first time only what changed travels. Which embeddings model a device uses (Settings, Memory) is not synced: each device keeps its own choice.
 
 - You choose what travels: apps and their data, Molfar's chats and projects, pictures, sound and video, and API keys with MCP settings. Keys travel only if you switch them on, locked with a passphrase you type on each device.
 - If the same chat changed on both devices, you choose which version to keep. The other one is saved for 30 days.

@@ -611,6 +611,8 @@ describe("embeddings through OpenRouter and provider choice", () => {
     fs.writeFileSync(p.connections, JSON.stringify({ connections }));
     fs.mkdirSync(path.dirname(p.auth), { recursive: true });
     fs.writeFileSync(p.auth, JSON.stringify(auth));
+    // a fresh device: the old keys in settings.json are taken over once (#431), so an earlier setup's file must go
+    fs.rmSync(p.embed, { force: true });
     if (opts.settings) fs.writeFileSync(p.settings, JSON.stringify(opts.settings));
     return new UserModelService("u", p, defaultInstanceConfig());
   }

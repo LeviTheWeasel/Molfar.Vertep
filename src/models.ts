@@ -6,6 +6,7 @@
 import { findLocalModel, type LocalModelId } from "./embed-local/catalog.js";
 import type { LocalEmbedder } from "./embed-local/index.js";
 import { canonicalEmbedModel } from "./embed-model-names.js";
+import { readEmbedSettings as readEmbedFile, writeEmbedSettings as writeEmbedFile, type EmbedSettings } from "./embed-settings.js";
 import fs from "node:fs";
 import path from "node:path";
 import { createModels, getCurrentSystemPrompt, getCurrentTools, getSupportedThinkingLevels, uuidv7, type Api, type AssistantMessage, type AssistantMessageEvent, type Context, type Credential, type CredentialInfo, type Message, type Model, type MutableModels, type Tool as PiTool, type ToolResultMessage, type Usage } from "@earendil-works/pi-ai";
@@ -757,20 +758,16 @@ export class UserModelService {
    *  Vectors of different models never compare, so callers store it. */
   embedModelUsed: string | null = null;
 
-  /** Engine embeddings settings (settings.json): `embedModel` (null = the
-   *  endpoint's default) and `embedProvider` ("auto" | "openrouter" | a
-   *  custom connection id). Missing or invalid values read as the default. */
-  readEmbedSettings(): { model: string | null; provider: string; local: LocalModelId | null } {
-    let model: string | null = null;
-    let provider = "auto";
-    let local: LocalModelId | null = null;
-    try {
-      const st = JSON.parse(fs.readFileSync(path.join(this.paths.root, "settings.json"), "utf8")) as { embedModel?: unknown; embedProvider?: unknown; embedLocal?: unknown };
-      if (typeof st.embedModel === "string" && st.embedModel.trim()) model = st.embedModel.trim();
-      if (typeof st.embedProvider === "string" && st.embedProvider.trim()) provider = st.embedProvider.trim();
-      if (findLocalModel(st.embedLocal)) local = st.embedLocal as LocalModelId;
-    } catch { /* defaults */ }
-    return { model, provider, local };
+  /** This device's embeddings choice (`src/embed-settings.ts`, #431; never synced): `model` (null = the
+   *  endpoint's default) and `provider` ("auto" | "openrouter" | "local" | a custom connection id). Missing or invalid
+   *  values read as the default. */
+  readEmbedSettings(): EmbedSettings {
+    return readEmbedFile(this.paths, (id) => !!this.localEmbed?.isReady(id));
+  }
+
+  /** Changes this device's embeddings choice; a null value clears one setting. */
+  writeEmbedSettings(patch: { model?: string | null; provider?: string; local?: LocalModelId | null }): EmbedSettings {
+    return writeEmbedFile(this.paths, (id) => !!this.localEmbed?.isReady(id), patch);
   }
 
   /** The model sent to an endpoint: explicit arg > the user's setting > the
