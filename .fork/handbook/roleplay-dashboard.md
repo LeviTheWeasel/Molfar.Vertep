@@ -1,5 +1,5 @@
 # Dashboard: the sensor pass, relations, the character journal, the clock
-Verified at: molfar.vertep-roleplay 92638da (parts); rest 1f0a99f
+Verified at: molfar.vertep-roleplay 92638da (parts); rest 1f0a99f; event table and stage at c603c31
 
 ## What it does
 - After a reply, a sensor model call reads the new messages and returns one JSON report: present people, clock, scene, events, each character's mood, condition, outfit, holding and goal, what each learned, what was said or promised, threads (quests), journal lines and edges between people.
@@ -51,6 +51,7 @@ Verified at: molfar.vertep-roleplay 92638da (parts); rest 1f0a99f
 - Model: the sensor call, one per reply. In fast mode the reply carries a `<vertep_state>` tag and `fastReply` uses it instead. A card with no soul is rated first.
 - Code: stats, clock, snapshot keys, stale snapshots, journal and said caps, insert text, trimming and budget.
 - The model supplies words and ids only. Stat values come from `applyTurn`.
+- The event table (`EVENT_ROWS`, 88 rows since #394) has a closeness `level` per row (0 anyone, 1 warm, 2 close, 3 intimate). `applyTurn` works the pair's stage out from the five numbers (`stageOf`) and scales the good effects of a row with a level (`stageFactor`: x1.5 ahead of the stage, x0.5 below; harm, level 0, a cold bond and the pulses never). A user row in `dashboard/events.json` may carry `level`; without one a changed default keeps its own. Pinned by `test/rp-dash-stage.test.ts`.
 
 ## Flow
 1. The reply ends. The UI posts `/dashboard/update`. `readUpdate` calls `runUpdate`, which calls `planUpdate`.

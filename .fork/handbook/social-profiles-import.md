@@ -1,5 +1,5 @@
 # Social: profiles, the import from Roleplay, the user's own page, the picture worker, stickers
-Verified at: molfar.vertep-social 748197a
+Verified at: molfar.vertep-social 748197a; the picture worker line at 6dc9606
 
 ## What it does
 Each character is one file, `profiles/<id>.json`. A profile is made by hand, from an idea, or by a one-time digest of a Roleplay card. The user's personas live in `you.json`. Plugins file pictures as pending and the open Social page draws them. Sticker packs name engine assets; the free catalog comes from GitHub.
@@ -19,7 +19,7 @@ Each character is one file, `profiles/<id>.json`. A profile is made by hand, fro
 - `src/screens/profiles/fill.ts` `applyProposals`: fills empty fields only.
 - `src/screens/you/api.ts` `importPersona`: brings one Roleplay persona into You.
 - `src/lib/roleplay-avatar.ts` `avatarFor`: stores a found picture as a Social asset.
-- `src/pictures/worker.ts` `useImageWorker`: draws pending pictures while the page is open.
+- `src/pictures/worker.ts` `useImageWorker`: draws pending pictures while the page is open. `src/screens/profiles/picture-api.ts` `generatePicture` first turns the description into tags (`POST /profiles/tags`, `plugins/profiles/plugin.js` `tagsRoute`, one text-model call) when the image model's prompt style from `GET /v1/images/models` is `tags` (#344); a failed call keeps the sentence.
 - `plugins/messenger/plugin.js` `imageRoute`: files a drawn picture, or its failure, into the chat.
 - `plugins/stickers/plugin.js` `cleanPacks`, `cleanCatalog`: keep the pack list and the safe catalog packs.
 - `src/stickers/catalog.ts` `addCatalogPack`: downloads and uploads one catalog pack.

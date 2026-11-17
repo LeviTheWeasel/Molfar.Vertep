@@ -1,5 +1,5 @@
 # Forge agents: custom agents built on the Canvas and run during play
-Verified at: molfar.vertep-roleplay 91eec33
+Verified at: molfar.vertep-roleplay c603c31 (Card types: Input and Write to Dashboard); rest 91eec33
 
 ## What it does
 - An agent is one Canvas file of kind `agent`, saved as `data/agents/<id>.vertep-agent.json`. Its cards are wired together on the Agents board. The file is data, not code.
@@ -31,14 +31,14 @@ Verified at: molfar.vertep-roleplay 91eec33
 ## Card types
 | Card | What it does | Reads or writes |
 |---|---|---|
-| Input | Gives the agent its values | Chat sources (last reply, user message, history, card, persona, author note, own previous text, Litopys facts, lorebook); Dashboard fields in `DASH_FIELDS` |
+| Input | Gives the agent its values | Chat sources (last reply, user message, history, card, persona, author note, own previous text, Litopys facts, lorebook); Dashboard fields in `DASH_FIELDS` (scene `date` and the number `day` since #402, read only). A source with nothing for the chat is missing data and skips every card that needs it; an entry with `optional: true` (#403, text only) arrives as an empty text, and a skipped card's trace says `missing=<ids>` |
 | Output | Sends the result out | Kinds `prompt-insert`, `note`, `choices`; shows only in allowed places |
 | Template | Builds text from `{{slots}}` | Each slot is an input |
 | Ask the model | One model call: text, yes/no or JSON | Costs one call; needs `llm` |
 | Parse JSON | Checks text against a shape | Sends a `failed` signal |
 | If | Yes, No or Unknown; never calls the model | Reads own state, dice or the chat |
 | Merge | Fires when any input fires | Signals only |
-| Write to Dashboard | Changes one Dashboard field | Field in `DASH_WRITE_FIELDS` (not `present`); queued until the run succeeds |
+| Write to Dashboard | Changes one Dashboard field | Field in `DASH_WRITE_FIELDS` (not `present`, `date` or `day`); queued until the run succeeds |
 | Read / Set / Add / Change own state | The agent's own fields | `agents/state/<chatId>/<id>.json`; numbers clamped |
 | Dice, Pick | Roll or pick in code | Same reply, same result |
 | Extract, Cut | Keep part of a text | Text only |

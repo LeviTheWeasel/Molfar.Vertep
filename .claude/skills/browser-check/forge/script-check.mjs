@@ -35,7 +35,7 @@ await page.waitForTimeout(600)
 await snap(page, "03-permissions-allowed-light")
 await dlg.getByRole("button", { name: /^Done$/ }).click()
 await page.waitForTimeout(500)
-await closeSheet(page)
+await closeSheet(page, app)
 await addAgentToChat(page, app, "Script demo")
 await check("run", async () => {
   await mockLog({ reset: true })

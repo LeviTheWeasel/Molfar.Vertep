@@ -71,10 +71,18 @@ export async function startChat(page, app) {
   await page.waitForTimeout(500)
 }
 
-/** The chat header's switcher (Preset, Persona, Model, Agents) open on one tab. */
+/** The chat's switcher (Preset, Persona, Model, Agents) open on one tab. On a desktop it is the pill in the chat header (tabs in a
+ *  popover); on a phone there is no pill: the same rows sit inside the chat's Menu, each row unfolding its list (#407). */
 export async function switchTab(page, app, tab) {
-  await app.getByRole("button", { name: /^Switch context/ }).first().click()
-  await app.getByRole("tab", { name: new RegExp(`^${tab}`) }).click()
+  const pill = app.getByRole("button", { name: /^Switch context/ }).first()
+  if (await pill.isVisible().catch(() => false)) {
+    await pill.click()
+    await app.getByRole("tab", { name: new RegExp(`^${tab}`) }).click()
+  } else {
+    await app.getByRole("button", { name: /^Menu$/ }).first().click()
+    await page.waitForTimeout(400)
+    await app.getByRole("button", { name: new RegExp(`^${tab}`) }).first().click()
+  }
   await page.waitForTimeout(500)
 }
 
@@ -95,13 +103,16 @@ export async function uploadAgent(page, app, file, id, { version } = {}) {
   return card
 }
 
-/** Allow an agent: on its card either an Allow button (older builds) or "Review permissions · N", which opens a dialog with "Allow all" (and "Done"). Does nothing when the agent is already allowed. */
+/** Allow an agent: on its card either an Allow button (older builds) or "Review permissions · N", which opens a dialog with "Allow all" (and "Done").
+ *  A fresh install opens that dialog by itself, so it may be open already. Does nothing when the agent is already allowed. */
 export async function allowAgent(page, app, id) {
   const card = app.getByTestId(`agent-card-${id}`)
   const review = card.getByRole("button", { name: /^Review permissions/ })
-  if (await review.isVisible().catch(() => false)) {
-    await review.click()
-    await app.getByRole("button", { name: /^Allow all$/ }).click()
+  const allowAll = app.getByRole("button", { name: /^Allow all$/ })
+  const open = await allowAll.isVisible().catch(() => false)
+  if (open || (await review.isVisible().catch(() => false))) {
+    if (!open) await review.click()
+    await allowAll.click()
     await app.getByRole("button", { name: /^Done$/ }).click().catch(() => {})
     await review.waitFor({ state: "detached", timeout: 15000 })
     await page.waitForTimeout(500)
@@ -111,7 +122,13 @@ export async function allowAgent(page, app, id) {
   if (await btn.isVisible().catch(() => false)) { await btn.click(); await btn.waitFor({ state: "detached", timeout: 15000 }); await page.waitForTimeout(500) }
 }
 
-export async function closeSheet(page) { await page.keyboard.press("Escape"); await page.waitForTimeout(700) }
+/** Close the top sheet. Escape does not close the Agents sheet (its X does), so the X is pressed when `app` is given; Escape otherwise. */
+export async function closeSheet(page, app) {
+  const x = app ? app.locator("[data-slot=sheet-close]").last() : null
+  if (x && (await x.isVisible().catch(() => false))) await x.click()
+  else await page.keyboard.press("Escape")
+  await page.waitForTimeout(700)
+}
 
 /** Add an installed agent to this chat from the Agents tab. */
 export async function addAgentToChat(page, app, name) {
