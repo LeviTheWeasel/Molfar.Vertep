@@ -1,4 +1,4 @@
-<!-- source: abe560e8cdbc -->
+<!-- source: b34e59fa6a0c -->
 # Apparaten, sync en back-ups
 
 Hoe je Molfar Vertep op een telefoon gebruikt, je verhalen tussen apparaten meeneemt, het als een app installeert en naar een nieuwe computer verhuist.
@@ -13,7 +13,7 @@ In Instellingen, Server, laat "Andere apparaten in mijn netwerk toestaan" een te
 
 ## Sync
 
-"Apparaten synchroniseren" in het accountmenu, of Instellingen, Sync. Meld je eenmaal op elk apparaat aan met Google. Wanneer je stopt met spelen, druk je op "Verzenden"; op het andere apparaat druk je op "Ophalen" en ga je verder. Na de eerste keer reist alleen wat er is veranderd.
+"Apparaten synchroniseren" in het accountmenu, of Instellingen, Sync. Meld je eenmaal op elk apparaat aan met Google. Wanneer je stopt met spelen, druk je op "Verzenden"; op het andere apparaat druk je op "Ophalen" en ga je verder. Na de eerste keer reist alleen wat er is veranderd. Welk embeddingmodel een apparaat gebruikt (Instellingen, Geheugen) wordt niet gesynchroniseerd: elk apparaat houdt zijn eigen keuze.
 
 - Je kiest wat er meegaat: apps en hun gegevens, Molfars chats en projecten, afbeeldingen, geluid en video, en API-sleutels met MCP-instellingen. Sleutels reizen alleen mee als je ze inschakelt, vergrendeld met een wachtwoordzin die je op elk apparaat typt.
 - Als dezelfde chat op beide apparaten is gewijzigd, kies je welke versie je behoudt. De andere wordt 30 dagen bewaard.

@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # App
 
 Come trovare, aggiungere, aggiornare e rimuovere le app. Le app sono ciò che usi davvero: Roleplay è quella principale.
@@ -39,7 +39,7 @@ Un’app ufficiale, come Social, può dire a Molfar Vertep che qualcosa ti sta a
 
 ## Aggiornamenti
 
-L'icona di download nella barra superiore riceve un puntino quando c'è qualcosa in attesa. Elenca ogni app con una fonte di aggiornamento e ha "Controlla ora". Un'app installata da un file (uno zip) mostra "Nessuna fonte di aggiornamento": qui non può essere aggiornata. Per ricevere aggiornamenti, installala dallo Store; quella copia è un'app separata, quindi esporta prima il file se contiene dati che vuoi conservare (l'icona del cestino elimina un'app e i suoi dati). "Aggiorna tutto" appare quando due o più app sono in attesa, e non include mai Molfar Vertep stesso.
+L'icona di download nella barra superiore riceve un puntino quando c'è qualcosa in attesa. Elenca ogni app e ha "Controlla ora". Un'app senza fonte di aggiornamento mostra "Nessuna fonte di aggiornamento" e un breve motivo. Un'app installata da un file (uno zip) qui non può essere aggiornata: per ricevere aggiornamenti, installala dallo Store; quella copia è un'app separata, quindi esporta prima il file se contiene dati che vuoi conservare (l'icona del cestino elimina un'app e i suoi dati). Un'app creata su questo dispositivo (da Molfar, per esempio) o copiata a mano non ha alcuna fonte da cui aggiornarsi. L'installazione di un'app il cui intervallo `engine` indica un contratto app che questo motore non ha (un numero di versione di Molfar Vertep scritto lì per errore conta) viene rifiutata con un messaggio che lo dice; la riga del motore nella finestra degli aggiornamenti nomina le app installate che già non vanno bene. "Aggiorna tutto" appare quando due o più app sono in attesa, e non include mai Molfar Vertep stesso.
 
 Le tue modifiche vengono unite in un aggiornamento, e i tuoi dati vengono conservati. Dove le tue modifiche si sovrappongono alla nuova versione, non cambia ancora nulla: scegli "Tieni la mia", "Accetta aggiornamento" o "Chiedi a Molfar di unire". Un aggiornamento che installa nuovi pacchetti o chiede nuovi permessi attende il tuo OK.
 

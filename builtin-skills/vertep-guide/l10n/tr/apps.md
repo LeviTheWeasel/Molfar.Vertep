@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Uygulamalar
 
 Uygulamaları nasıl bulacağın, ekleyeceğin, güncelleyeceğin ve kaldıracağın. Uygulamalar gerçekten kullandığın şeylerdir: Bunlardan en önemlisi Roleplay'dir.
@@ -39,7 +39,7 @@ Başlangıç sayfasındaki "Mağaza", Molfar Vertep'ten ( "Resmî uygulama" olar
 
 ## Güncellemeler
 
-Üst çubuktaki indirme simgesi, bekleyen bir şey olduğunda bir nokta alır. Güncelleme kaynağı olan her uygulamayı listeler ve "Şimdi denetle" içerir. Bir dosyadan (zip) kurulan uygulama "Güncelleme kaynağı yok" olarak görünür ve burada güncellenemez. Güncelleme almak için Store'dan yükle; bu kopya ayrı bir uygulamadır, bu yüzden tutmak istediğin verileri varsa önce dosyayı dışa aktar (çöp kutusu simgesi uygulamayı ve verilerini siler). "Tümünü güncelle", iki veya daha fazla uygulama beklediğinde görünür ve asla Molfar Vertep'in kendisini içermez.
+Üst çubuktaki indirme simgesi, bekleyen bir şey olduğunda bir nokta alır. Her uygulamayı listeler ve "Şimdi denetle" içerir. Güncelleme kaynağı olmayan bir uygulama "Güncelleme kaynağı yok" ve kısa bir neden gösterir. Bir dosyadan (zip) kurulan uygulama burada güncellenemez: güncelleme almak için Store'dan yükle; bu kopya ayrı bir uygulamadır, bu yüzden tutmak istediğin verileri varsa önce dosyayı dışa aktar (çöp kutusu simgesi uygulamayı ve verilerini siler). Bu cihazda yapılmış (örneğin Molfar'ın yaptığı) ya da elle kopyalanmış bir uygulamanın güncellenebileceği hiçbir kaynak yoktur. `engine` aralığı, bu motorda bulunmayan bir uygulama sözleşmesini belirten (oraya yanlışlıkla yazılmış bir Molfar Vertep sürüm numarası da sayılır) bir uygulamanın kurulumu bunu söyleyen bir iletiyle reddedilir; güncelleme penceresindeki motor satırı, artık uymayan kurulu uygulamaları adlandırır. "Tümünü güncelle", iki veya daha fazla uygulama beklediğinde görünür ve asla Molfar Vertep'in kendisini içermez.
 
 Kendi düzenlemelerin bir güncellemeyle birleştirilir ve verilerin korunur. Düzenlemelerin yeni sürümle çakıştığı yerde henüz hiçbir şey değişmez: "Benimkini tut", "Güncellemeyi al" veya "Molfar'dan birleştirmesini iste" seçeneklerini seçersin. Yeni paketler kuran veya yeni izinler isteyen bir güncelleme senin onayını bekler.
 

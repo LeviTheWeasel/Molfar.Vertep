@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Apps
 
 So findest, fügst, aktualisierst und entfernst du Apps. Apps sind das, was du tatsächlich nutzt: Roleplay ist die wichtigste.
@@ -39,7 +39,7 @@ Eine offizielle App, etwa Social, kann Molfar Vertep mitteilen, dass auf dich et
 
 ## Updates
 
-Das Download-Symbol in der oberen Leiste bekommt einen Punkt, wenn etwas ansteht. Es listet jede App mit Update-Quelle und hat „Jetzt prüfen“. Eine App, die aus einer Datei (einer ZIP-Datei) installiert wurde, zeigt „Keine Update-Quelle“: Sie lässt sich hier nicht aktualisieren. Für Updates installiere sie aus dem Store; diese Kopie ist eine eigene App, exportiere also vorher die Datei, wenn sie Daten enthält, die du behalten willst (das Papierkorb-Symbol löscht eine App und ihre Daten). „Alle aktualisieren“ erscheint, wenn zwei oder mehr Apps warten, und schließt Molfar Vertep selbst nie ein.
+Das Download-Symbol in der oberen Leiste bekommt einen Punkt, wenn etwas ansteht. Es listet jede App und hat „Jetzt prüfen“. Eine App ohne Update-Quelle zeigt „Keine Update-Quelle“ und einen kurzen Grund. Eine App, die aus einer Datei (einer ZIP-Datei) installiert wurde, lässt sich hier nicht aktualisieren: Für Updates installiere sie aus dem Store; diese Kopie ist eine eigene App, exportiere also vorher die Datei, wenn sie Daten enthält, die du behalten willst (das Papierkorb-Symbol löscht eine App und ihre Daten). Eine App, die auf diesem Gerät entstanden ist (etwa durch Molfar) oder von Hand hineinkopiert wurde, hat gar keine Quelle, aus der sie sich aktualisieren könnte. Eine App, deren Bereich `engine` einen App-Vertrag nennt, den diese Engine nicht hat (eine Molfar-Vertep-Versionsnummer, die dort versehentlich steht, zählt dazu), wird bei der Installation mit einer entsprechenden Meldung abgelehnt; die Engine-Zeile im Update-Dialog nennt installierte Apps, die schon jetzt nicht passen. „Alle aktualisieren“ erscheint, wenn zwei oder mehr Apps warten, und schließt Molfar Vertep selbst nie ein.
 
 Deine eigenen Änderungen werden in ein Update eingearbeitet, und deine Daten bleiben erhalten. Wo deine Änderungen sich mit der neuen Version überschneiden, ändert sich zuerst nichts: Du wählst „Meine behalten“, „Update übernehmen“ oder „Molfar zum Zusammenführen bitten“. Ein Update, das neue Pakete installiert oder neue Rechte verlangt, wartet auf dein OK.
 

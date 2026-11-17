@@ -1,4 +1,4 @@
-<!-- source: abe560e8cdbc -->
+<!-- source: b34e59fa6a0c -->
 # Geräte, Synchronisierung und Backups
 
 So nutzt du Molfar Vertep auf dem Handy, nimmst deine Geschichten zwischen Geräten mit, installierst es wie eine App und ziehst auf einen neuen Computer um.
@@ -13,7 +13,7 @@ Unter Einstellungen, Server erlaubt „Andere Geräte in meinem Netzwerk erlaube
 
 ## Synchronisierung
 
-„Geräte synchronisieren“ im Kontomenü oder Einstellungen, Synchronisierung. Melde dich auf jedem Gerät einmal mit Google an. Wenn du aufhörst zu spielen, drücke „Hochladen“; auf dem anderen Gerät drücke „Übernehmen“ und spiele weiter. Nach dem ersten Mal reist nur noch, was sich geändert hat.
+„Geräte synchronisieren“ im Kontomenü oder Einstellungen, Synchronisierung. Melde dich auf jedem Gerät einmal mit Google an. Wenn du aufhörst zu spielen, drücke „Hochladen“; auf dem anderen Gerät drücke „Übernehmen“ und spiele weiter. Nach dem ersten Mal reist nur noch, was sich geändert hat. Welches Embedding-Modell ein Gerät verwendet (Einstellungen, Gedächtnis), wird nicht synchronisiert: Jedes Gerät behält seine eigene Wahl.
 
 - Du wählst, was reist: Apps und ihre Daten, Molfars Chats und Projekte, Bilder, Ton und Video sowie API-Schlüssel mit MCP-Einstellungen. Schlüssel reisen nur, wenn du sie einschaltest, gesperrt mit einer Passphrase, die du auf jedem Gerät eingibst.
 - Wurde derselbe Chat auf beiden Geräten geändert, wählst du, welche Version du behalten willst. Die andere wird 30 Tage gespeichert.

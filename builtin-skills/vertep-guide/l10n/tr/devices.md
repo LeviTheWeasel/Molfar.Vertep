@@ -1,4 +1,4 @@
-<!-- source: abe560e8cdbc -->
+<!-- source: b34e59fa6a0c -->
 # Cihazlar, eşitleme ve yedekler
 
 Molfar Vertep'i telefonda nasıl kullanacağın, hikayelerini cihazlar arasında nasıl taşıyacağın, onu bir uygulama gibi nasıl kuracağın ve yeni bir bilgisayara nasıl taşıyacağın.
@@ -13,7 +13,7 @@ Hesap menüsündeki "Uygulamayı yükle", Molfar Vertep'i ana ekranına veya bil
 
 ## Eşitleme
 
-Hesap menüsünde "Cihazları eşitle" veya Ayarlar, Eşitleme. Her cihazda bir kez Google ile oturum aç. Oynamayı bıraktığında "Gönder"e bas; diğer cihazda "Çek"e bas ve devam et. İlk seferden sonra yalnızca değişenler taşınır.
+Hesap menüsünde "Cihazları eşitle" veya Ayarlar, Eşitleme. Her cihazda bir kez Google ile oturum aç. Oynamayı bıraktığında "Gönder"e bas; diğer cihazda "Çek"e bas ve devam et. İlk seferden sonra yalnızca değişenler taşınır. Bir cihazın hangi gömme modelini kullandığı (Ayarlar, Bellek) eşitlenmez: her cihaz kendi seçimini korur.
 
 - Nelerin taşınacağını sen seçersin: uygulamalar ve verileri, Molfar'ın sohbetleri ve projeleri, resimler, ses ve video ve MCP ayarlarıyla birlikte API anahtarları. Anahtarlar yalnızca, her cihazda yazdığın bir parolayla kilitlenmiş olarak açarsan taşınır.
 - Aynı sohbet her iki cihazda da değiştiyse, hangi sürümü tutacağını seçersin. Diğeri 30 gün boyunca saklanır.

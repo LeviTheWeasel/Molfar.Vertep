@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Apps
 
 Cómo buscar, añadir, actualizar y quitar apps. Las apps son lo que de verdad usas: Roleplay es la principal.
@@ -39,7 +39,7 @@ Una app oficial, como Social, puede avisar a Molfar Vertep de que algo te espera
 
 ## Actualizaciones
 
-El icono de descarga en la barra superior recibe un punto cuando hay algo pendiente. Muestra cada app con fuente de actualización y tiene «Comprobar ahora». Una app instalada desde un archivo (un zip) muestra «Sin fuente de actualización»: no se puede actualizar aquí. Para recibir actualizaciones, instálala desde la Store; esa copia es una app aparte, así que exporta antes el archivo si contiene datos que quieres conservar (el icono de la papelera borra una app y sus datos). «Actualizar todo» aparece cuando dos o más apps esperan, y nunca incluye a Molfar Vertep en sí.
+El icono de descarga en la barra superior recibe un punto cuando hay algo pendiente. Muestra cada app y tiene «Comprobar ahora». Una app sin fuente de actualización muestra «Sin fuente de actualización» y un motivo breve. Una app instalada desde un archivo (un zip) no se puede actualizar aquí: para recibir actualizaciones, instálala desde la Store; esa copia es una app aparte, así que exporta antes el archivo si contiene datos que quieres conservar (el icono de la papelera borra una app y sus datos). Una app creada en este dispositivo (por Molfar, por ejemplo) o copiada a mano no tiene de dónde actualizarse. Instalar una app cuyo rango `engine` nombra un contrato de app que este motor no tiene (un número de versión de Molfar Vertep escrito ahí por error cuenta) se rechaza con un mensaje que lo explica; la fila del motor en el diálogo de actualizaciones nombra las apps instaladas que ya no encajan. «Actualizar todo» aparece cuando dos o más apps esperan, y nunca incluye a Molfar Vertep en sí.
 
 Tus propios cambios se combinan con una actualización, y tus datos se conservan. Donde tus cambios se solapan con la versión nueva, nada cambia todavía: eliges «Conservar la mía», «Aceptar actualización» o «Pedir a Molfar que combine». Una actualización que instala paquetes nuevos o pide permisos nuevos espera tu aprobación.
 

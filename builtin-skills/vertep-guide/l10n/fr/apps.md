@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Apps
 
 Comment trouver, ajouter, mettre à jour et supprimer des apps. Les apps sont ce que vous utilisez réellement : Roleplay est la principale.
@@ -39,7 +39,7 @@ Une app officielle, comme Social, peut signaler à Molfar Vertep qu’il y a que
 
 ## Mises à jour
 
-L’icône de téléchargement dans la barre supérieure reçoit un point quand quelque chose attend. Elle liste chaque app ayant une source de mise à jour et propose « Vérifier maintenant ». Une app installée depuis un fichier (un zip) affiche « Pas de source de mise à jour » : elle ne peut pas être mise à jour ici. Pour recevoir des mises à jour, installez-la depuis le Store ; cette copie est une app à part, donc exportez d’abord le fichier si elle contient des données à garder (l’icône corbeille supprime une app et ses données). « Tout mettre à jour » apparaît quand deux apps ou plus attendent, et n’inclut jamais Molfar Vertep lui-même.
+L’icône de téléchargement dans la barre supérieure reçoit un point quand quelque chose attend. Elle liste chaque app et propose « Vérifier maintenant ». Une app sans source de mise à jour affiche « Pas de source de mise à jour » et une courte raison. Une app installée depuis un fichier (un zip) ne peut pas être mise à jour ici : pour recevoir des mises à jour, installez-la depuis le Store ; cette copie est une app à part, donc exportez d’abord le fichier si elle contient des données à garder (l’icône corbeille supprime une app et ses données). Une app créée sur cet appareil (par Molfar, par exemple) ou copiée à la main n’a aucune source d’où se mettre à jour. Installer une app dont la plage `engine` désigne un contrat d’app que ce moteur n’a pas (un numéro de version de Molfar Vertep écrit là par erreur compte) est refusé avec un message qui le dit ; la ligne du moteur dans la boîte de dialogue des mises à jour nomme les apps installées qui ne conviennent déjà plus. « Tout mettre à jour » apparaît quand deux apps ou plus attendent, et n’inclut jamais Molfar Vertep lui-même.
 
 Vos propres modifications sont fusionnées dans une mise à jour, et vos données sont conservées. Là où vos modifications chevauchent la nouvelle version, rien ne change encore : vous choisissez « Garder la mienne », « Prendre la mise à jour » ou « Demander à Molfar de fusionner ». Une mise à jour qui installe de nouveaux paquets ou demande de nouvelles permissions attend votre accord.
 

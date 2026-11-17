@@ -1,4 +1,4 @@
-<!-- source: a69bed8dd436 -->
+<!-- source: 307dd6e4bc8d -->
 # Apps
 
 Como encontrar, adicionar, atualizar e remover apps. Apps são as coisas que você realmente usa: o Roleplay é o principal.
@@ -39,7 +39,7 @@ Um app oficial, como o Social, pode avisar o Molfar Vertep de que algo está esp
 
 ## Atualizações
 
-O ícone de download na barra superior ganha um ponto quando algo está esperando. Ele lista todos os apps com uma fonte de atualização e tem "Verificar agora". Um app instalado a partir de um arquivo (um zip) mostra "Sem fonte de atualização": ele não pode ser atualizado aqui. Para receber atualizações, instale-o pela Store; essa cópia é um app separado, então exporte antes o arquivo se ele tiver dados que você quer manter (o ícone de lixeira exclui o app e os dados dele). "Atualizar tudo" aparece quando dois ou mais apps esperam, e nunca inclui o próprio Molfar Vertep.
+O ícone de download na barra superior ganha um ponto quando algo está esperando. Ele lista todos os apps e tem "Verificar agora". Um app sem fonte de atualização mostra "Sem fonte de atualização" e um motivo curto. Um app instalado a partir de um arquivo (um zip) não pode ser atualizado aqui: para receber atualizações, instale-o pela Store; essa cópia é um app separado, então exporte antes o arquivo se ele tiver dados que você quer manter (o ícone de lixeira exclui o app e os dados dele). Um app criado neste dispositivo (pelo Molfar, por exemplo) ou copiado à mão não tem de onde se atualizar. Instalar um app cujo intervalo `engine` nomeia um contrato de app que este motor não tem (um número de versão do Molfar Vertep escrito ali por engano conta) é recusado com uma mensagem que diz isso; a linha do motor na janela de atualizações nomeia os apps instalados que já não servem. "Atualizar tudo" aparece quando dois ou mais apps esperam, e nunca inclui o próprio Molfar Vertep.
 
 Suas próprias edições são mescladas em uma atualização, e seus dados são mantidos. Onde suas edições se sobrepõem à nova versão, nada muda ainda: você escolhe "Manter a minha", "Aceitar atualização" ou "Pedir ao Molfar para mesclar". Uma atualização que instala novos pacotes ou pede novas permissões espera seu OK.
 
