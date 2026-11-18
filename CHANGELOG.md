@@ -7,6 +7,8 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+- **A damaged `users.json` no longer makes the Windows program close without a word (#440).** After a power cut or a forced shutdown the accounts file could be left empty or cut off (it was rewritten in place), and the program printed its first log line and closed at once, with no way to read why. Now `users.json` and `sessions.json` are saved through a temp file and a rename, and a file that still cannot be read stops the start with a message that names it, says the accounts' data in `users/` is untouched, and what to do (rename the file, start again, create the account again). Nothing is reset silently. Every fatal exit of a downloaded program on Windows now prints the reason in one line with the log file's path and waits for Enter, instead of the window vanishing; the long stack stays in the log file.
+
 ## 1.17.0 (2026-11-17)
 
 - **Updates dialog, apps with no update source (#318).** An app made on this device or copied in by hand now gets a quiet row too ("No update source", with a reason), next to the apps installed from a zip, so "where is my app" has an answer there.

@@ -149,4 +149,5 @@ Traps:
 - Staging copies follow `staging-latest`. Its title must read `Staging <version>`.
 - A tag that does not match `package.json`, or is not on main, fails `release.yml`.
 - An app's `engine` range is the app contract, not the engine version. Do not bump `APP_API_VERSION` for an ordinary release.
+- The fatal exits of `src/index.ts` (`main().catch` and the `uncaughtException` / `unhandledRejection` handlers) go through `fatalExit` (#440): a binary prints one plain line plus the log path, keeps the full stack in the log file only, and on Windows with a console holds the window ("Press Enter to close.") like `fail()`. A double-clicked `molfar-vertep.exe` loses any error that bypasses both. `UserService` throws `DataFileError` (readable, names the file) for a `users.json` that cannot be parsed and never starts with an empty list; `users.json` and `sessions.json` are written with `writeFileAtomic` (temp file and rename).
 - `rollback` for a downloaded program needs the `.old` files; the error text says 1.2.2 or newer keeps them.

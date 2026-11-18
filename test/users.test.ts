@@ -170,3 +170,50 @@ describe("account names cannot collide once a filesystem folds case", () => {
     }
   });
 });
+
+describe("UserService data file (#440)", () => {
+  it("names the file and says what to do when users.json is empty or cut off", () => {
+    for (const content of ["", '{"users": [{"id": "a", "usern']) {
+      fs.writeFileSync(path.join(dir, "users.json"), content);
+      let err: Error | null = null;
+      try {
+        new UserService(dir);
+      } catch (e) {
+        err = e as Error;
+      }
+      expect(err?.name).toBe("DataFileError");
+      expect(err?.message).toContain(path.join(dir, "users.json"));
+      expect(err?.message).toContain("create the account again");
+      // the file is left as it was: nothing is reset silently
+      expect(fs.readFileSync(path.join(dir, "users.json"), "utf8")).toBe(content);
+    }
+  });
+
+  it("saves through a temp file: the list is complete and no temp file is left", () => {
+    const svc = new UserService(dir);
+    svc.create("dora", "admin", { password: "test-pass-1" });
+    svc.create("emil", "user", { password: "test-pass-1" });
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "users.json"), "utf8")).users).toHaveLength(2);
+    expect(fs.readdirSync(dir).filter((f) => f.endsWith(".tmp"))).toEqual([]);
+  });
+
+  it("the entry point prints the reason and exits 1 on a damaged users.json", async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "users-boot-"));
+    try {
+      fs.mkdirSync(path.join(home, "data"), { recursive: true });
+      fs.writeFileSync(path.join(home, "data", "users.json"), "");
+      const proc = Bun.spawn(["bun", path.join(import.meta.dir, "..", "src", "index.ts"), "--home", home, "--port", "18797"], {
+        stdout: "pipe",
+        stderr: "pipe",
+        env: { ...process.env, MOLFAR_VERTEP_OPEN_BROWSER: "false" },
+      });
+      const [out, errOut, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
+      expect(code).toBe(1);
+      expect(out + errOut).toContain("users.json cannot be read");
+      const log = fs.readFileSync(path.join(home, "data", "logs", "molfar-vertep.log"), "utf8");
+      expect(log).toContain("DataFileError");
+    } finally {
+      try { fs.rmSync(home, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
+  });
+});

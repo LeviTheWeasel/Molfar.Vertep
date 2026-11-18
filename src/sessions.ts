@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { writeFileAtomic } from "./plugins/atomic-write.mjs";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -62,7 +63,7 @@ export class SessionService {
   private save(): void {
     const sessions = [...this.sessions.values()];
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
-    fs.writeFileSync(this.file, JSON.stringify({ sessions }, null, 2) + "\n", { encoding: "utf8", mode: 0o600 });
+    writeFileAtomic(this.file, JSON.stringify({ sessions }, null, 2) + "\n", 0o600); // temp file + rename (#440)
     try { fs.chmodSync(this.file, 0o600); } catch { /* best effort */ }
     try { this.loadedMtime = fs.statSync(this.file).mtimeMs; } catch { /* stat failed: next read reloads */ }
   }
