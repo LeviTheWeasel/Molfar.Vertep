@@ -79,7 +79,7 @@ Change X, touch Y:
 - A permission name: `PluginPermission`, `hasCapAny`'s alias map, `declaredPermissions` and `grantsFor` in `src/server/app.ts`, and the approve route's default set.
 - `PLUGIN_HOOKS`: the `source.includes` pre-checks in `collectSiblingLlmHooks` and `collectInsertCeilings`.
 - `LLM_PATCH_FIELDS`: what an `llmRequest` hook may change.
-- `writeFileAtomic`: also used by `src/plugins/store.ts`; `test/atomic-write.test.ts`.
+- `writeFileAtomic`: also used by `src/plugins/store.ts`, `src/users.ts` and `src/sessions.ts` (#440); `test/atomic-write.test.ts`.
 
 Traps:
 - A full pool queues a call on the least loaded worker, and the worker's message handler is async: the two calls take turns on its one thread in small slices, and each one's clock runs for both. Measured with one worker: two calls of 1.5 s of work each both took 5.6 s. Calls of one app with `fs` cannot meet this way during a write (the gate gives a write the data folder alone), but reads of one app can, and so can calls of different apps or without `fs`.
