@@ -8,10 +8,12 @@ rebuild this file. The page named in each heading has the detail.
 
 Change X, touch Y:
 - Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
-- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`.
 - A place field: `cleanPlace`, `src/screens/city/api.ts`, the guide page `city`.
 
 Traps:
+- A room is a new club, so its daily caps start again every time the user walks in; it is outside `MAX_CLUBS`; one at a time; the room needs `city/now.json` to be of the current band (a stale file means "try again in a minute").
+- `bandOf` in the clubs plugin and `bandId` here are copies; change both.
 - Weights and the work hours are guesses.
 - `workplace` is read but nothing writes it yet, so na and dnd mean home.
 - Clearing all profiles leaves `city/` until a new profile appears (the tick does nothing on an empty list).
