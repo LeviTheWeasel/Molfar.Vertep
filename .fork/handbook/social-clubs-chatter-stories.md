@@ -60,7 +60,7 @@ Made (`pickStory`): a 10% roll, `community.stories` on, `storiesPerDay` (default
 - Pictures off (`images.on` not true): no model call; the caption is the diary line's first sentence or two (`captionFrom`).
 - Pictures on: one call, key `st:<profile>:<entry>`, 200 tokens, asking for JSON with a caption and an image sentence (`storySystem`). Model: the character's own, else `models.forum`.
 
-The 24 hours: `STORY_MS` counts from `at`. `readFile` drops older stories on every read. The GET route does not write; the tick rewrites the file when the count changed.
+The journal (`social-journal.md`) keeps a copy of live stories and files one as a post when it runs out, unless the switch `community.storiesToJournal` is off or the user removed it. The 24 hours: `STORY_MS` counts from `at`. `readFile` drops older stories on every read. The GET route does not write; the tick rewrites the file when the count changed.
 
 The picture: `addStory` files `image: {state: "pending"}`. The page draws it through `GET /stories/images` and `POST /stories/image`, with `src/pictures/worker.ts` doing the work. The user sees live stories (`GET /stories`) and can mark or remove them.
 

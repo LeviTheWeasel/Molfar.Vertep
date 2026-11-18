@@ -4,6 +4,30 @@ Built by a script from the pages of this handbook; do not edit by hand. When a p
 rebuild this file. The page named in each heading has the detail.
 
 
+## From `social-city.md`
+
+Change X, touch Y:
+- The shape of `city/now.json` or `city/places.json`: every copy of `cityNow` (six plugins) and `test/city-readers.test.ts`.
+- Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`, `test/city-readers.test.ts`.
+- A place field: `cleanPlace`, `placeRoute`, `cityView`, `src/screens/city/api.ts`, `editors.tsx`, the guide page `city`.
+
+Traps:
+- `cityNow` returns null unless `now.json` is of the current band; a place read just after a band change may be missing for up to a minute.
+- A story's or post's `place` is a stored name: a stock place reads in English whatever the page's language.
+- Meeting at a place does not change who knows whom (People is untouched by design).
+- `messengerPlace` is off by default and costs about 30 tokens (27 to 40) per reply and first message.
+- The page translates a place or district name only when `by` is `stock`: anything the user touched shows its stored name, so editing a stock place freezes its name in the page's language of that moment.
+- At most 60 places and 12 districts; no place in the Homes district; Homes is never removed.
+- The picture is an asset url made by the picture window; the city never draws or uploads.
+- A room is a new club, so its daily caps start again every time the user walks in; it is outside `MAX_CLUBS`; one at a time; the room needs `city/now.json` to be of the current band (a stale file means "try again in a minute").
+- `bandOf` in the clubs plugin and `bandId` here are copies; change both.
+- Weights and the work hours are guesses.
+- `workplace` is read but nothing writes it yet, so na and dnd mean home.
+- Clearing all profiles leaves `city/` until a new profile appears (the tick does nothing on an empty list).
+- The place plate is cosmetic: tiles show everyone in a place anyway.
+
+
 ## From `social-clubs-chatter-stories.md`
 
 Change X, touch Y:
@@ -37,6 +61,21 @@ Traps:
 - A removed post loses its `repost` or `image` flag, so it frees that day's count (docs: DECISIONS, "Remove a post").
 - The ceiling check runs on every new topic, but on a reply only when it is not to the user.
 - Clubs are not in this plugin.
+
+
+## From `social-journal.md`
+
+Change X, touch Y:
+- Anything that would show a journal post to a character (a prompt, a comment, a mention): ask `canRead` with the character that speaks. The user always sees everything.
+- The story's life (`STORY_MS`, the sweep in `plugins/stories/plugin.js`): the mirror's 24 h and 5 minute slack in `plugins/journal/plugin.js`, `test/journal.test.ts`.
+- A post field: `cleanPost`, `src/screens/journal/api.ts`, the guide page `journal`.
+- Reset parts: `RESET_PARTS` and `RESET_WITH_PROFILES` in the profiles plugin, `src/screens/settings/reset-api.ts`, `test/reset.test.ts`.
+
+Traps:
+- Clearing the characters also clears the user's own posts (the part goes with the profiles so no journal waits under a reused id).
+- The tick removes a journal whose profile is gone, but only when the profiles folder lists at least one profile.
+- Stories that vanished before the journal shipped cannot be recovered.
+- The user's key is "you", so a profile id "you" is refused.
 
 
 ## From `social-life.md`
