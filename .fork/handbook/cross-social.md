@@ -58,6 +58,7 @@ Traps:
 ## From `social-journal.md`
 
 Change X, touch Y:
+- Anything that would show a journal post to a character (a prompt, a comment, a mention): ask `canRead` with the character that speaks. The user always sees everything.
 - The story's life (`STORY_MS`, the sweep in `plugins/stories/plugin.js`): the mirror's 24 h and 5 minute slack in `plugins/journal/plugin.js`, `test/journal.test.ts`.
 - A post field: `cleanPost`, `src/screens/journal/api.ts`, the guide page `journal`.
 - Reset parts: `RESET_PARTS` and `RESET_WITH_PROFILES` in the profiles plugin, `src/screens/settings/reset-api.ts`, `test/reset.test.ts`.
