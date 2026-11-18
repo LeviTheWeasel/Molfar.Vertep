@@ -10,6 +10,7 @@ Before touching a system, read its page in `.fork/handbook/INDEX.md`.
 The queue is GitHub: `gh issue list --state open --label enhancement` and `--label bug`. The owner picks the order unless it is
 written here. Bugs are fixed in the Tuesday batch (CLAUDE.md, "Bugs"). Where the next work stands (2026-11-14):
 
+- **Social (2026-11-18):** Journal and City shipped in Social 0.17.0 (#444, #445 closed). Next: #452 (a background image for a place, generate or upload, open questions in the issue), #453 (everything left, and what was never tried with a real engine or model: look at that first when the owner has run it), then the memory ledger #446 (the owner's answers are in the issue), #447 to #450.
 - **Roleplay, the owner's current line:** group dynamics (#404, #405: member voices, check on real free models, tune the wording),
   the turn director (#401: design is in STATE, no code yet),
   Agent forge follow-ups (#396 items left, #402, #403), the persona frame on a real model (#398), the lorebook budget question (#397).
