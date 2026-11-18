@@ -1,5 +1,5 @@
 # Pictures in Roleplay: portraits, sprites and outfits, backgrounds, scene pictures, voice
-Verified at: molfar.vertep-roleplay 607147f
+Verified at: molfar.vertep-roleplay 607147f; Backgrounds at ff6ecde (branch claude/278-place-keys, not merged)
 
 ## What it does
 - A card has one portrait (its avatar) and an optional set of sprites: small pictures per emotion, sorted by outfit and, for a Narrator card, by voice.
@@ -50,7 +50,8 @@ Verified at: molfar.vertep-roleplay 607147f
 - A chat has a `backgroundId`. "none" hides the picture. When unset, the app's active background is used.
 - Backgrounds are image items with tags, kept in folders. A chat's `autoBackground` names a folder, with an on switch and an optional draw flag.
 - When auto background is on, `applySceneBackground` runs after each Dashboard update. It asks the world for the picture bound to the current place (`sceneBackgroundId`). Without one, the sensor's pick is used.
-- With drawing allowed, a new place can be drawn (`autoDrawBlock`). A chat waits 60 seconds between draws, and a failed place waits 15 minutes (`DRAW_COOLDOWN_MS`, `DRAW_RETRY_MS`).
+- A name is matched by its words (#278): `placeWordKey` drops small words, time of day and weather, so "Lyra's quarters at night" is `lyra_quarters`; "mill" and "mill cellar" stay apart. The sensor plugin keeps a copy (`backdropWordKey` in `plugins/relations/plugin.js`, inside a `lexicon` block; a test keeps the two equal) and matches picture names only; the app (`findForPlace`) also matches tags and, through `sceneRecordFor`, the names of the scene's World record.
+- With drawing allowed, a new place can be drawn (`autoDrawBlock`). A chat waits 60 seconds between draws, and a failed place waits 15 minutes (`DRAW_COOLDOWN_MS`, `DRAW_RETRY_MS`). A drawn picture is tagged with the place's names and bound to the scene's World record (`editWorldRecord`, `background`) when that record has the same words and no picture yet.
 
 ## Pictures drawn during play
 1. A draw starts one of two ways. The model calls the Picture tool (`handleTool`), which answers "being drawn" and tells the model not to describe it. Or the user types /imagine (`parseImagineArg`), with a mode word (scene, character, portrait, me, background) or a free description.
