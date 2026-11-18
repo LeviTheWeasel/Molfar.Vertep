@@ -55,7 +55,7 @@ Not by the city itself (a test uses a model that throws on any use). A room is a
 ## Traps
 - `cityNow` returns null unless `now.json` is of the current band; a place read just after a band change may be missing for up to a minute.
 - A story's or post's `place` is a stored name; the page translates it only when it equals a stock place's English name (`usePlaceName`).
-- `POST /v1/images` takes no size: a "wide" picture is whatever shape the model draws, shown with `cover`; the prompt asks for 16:9.
+- `POST /v1/images` takes a shape, `aspect: "wide"` (engine #455), which Social sends for place and district pictures; a backend that cannot take it (the pi-ai catalog, OpenRouter) draws its own shape, so the picture is still shown with `cover` and the prompt still asks for 16:9. An engine older than the change ignores the field.
 - A room's picture is read when the club view is built, so a place picture changed while the room is open shows on the next load.
 - Meeting at a place does not change who knows whom (People is untouched by design).
 - `messengerPlace` is off by default and costs about 30 tokens (27 to 40) per reply and first message.

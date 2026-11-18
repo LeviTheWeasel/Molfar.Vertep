@@ -25,7 +25,7 @@ import { inspectAssistantMessage, inspectRequest, inspectResult, type InspectorE
 import { type PromptSources, systemPartsFor } from "./prompt-sources.js";
 import type { UserPaths } from "./paths.js";
 import type { InstanceConfig } from "./config.js";
-import { ImageError, endpointGenerate, endpointPromptStyle, imageEndpoint, listEndpointOptions, type EndpointOptions, listEndpointModels, listImageEndpoints, geminiGenerate, geminiImageModels, mapCatalogError, nanoGptGenerate, nanoGptImageModels, providerError, readImageFavorites, type ImageFavorite, type ListedImageModel } from "./images.js";
+import { ImageError, type ImageAspect, endpointGenerate, endpointPromptStyle, imageEndpoint, listEndpointOptions, type EndpointOptions, listEndpointModels, listImageEndpoints, geminiGenerate, geminiImageModels, mapCatalogError, nanoGptGenerate, nanoGptImageModels, providerError, readImageFavorites, type ImageFavorite, type ListedImageModel } from "./images.js";
 import { acceptsServiceTier, blockFor, blockValues, mergeParams, readModelParams, type AppliedParams } from "./model-params.js";
 import { isClaudeModel, longCacheSupported, readCacheModes, writeCacheMode, type CacheMode } from "./model-cache.js";
 import { CacheKeepalive, type KeepaliveStatus } from "./cache-keepalive.js";
@@ -2000,7 +2000,7 @@ export class UserModelService {
   }
 
   /** Generate one image from a prompt. Returns the encoded image bytes. */
-  async generateImage(req: { prompt: string; model?: string | null }): Promise<{ data: Buffer; mimeType: string; model: string }> {
+  async generateImage(req: { prompt: string; model?: string | null; aspect?: ImageAspect }): Promise<{ data: Buffer; mimeType: string; model: string }> {
     const find = (list: ImageModelInfo[]) =>
       req.model ? list.find((m) => `${m.provider}/${m.id}` === req.model || m.id === req.model) : defaultImageModel(list, readImageFavorites(this.paths));
     let models = this.imageModelList ?? (await this.imageModels());
@@ -2017,16 +2017,16 @@ export class UserModelService {
     if (pick.api === NANOGPT_IMAGES_API) {
       const nano = this.nanoGptKey();
       if (!nano) throw new ModelNotConfiguredError("the NanoGPT connection has no key (Settings → API connections)");
-      return { ...(await nanoGptGenerate(nano.key, pick.id, req.prompt)), model: ref };
+      return { ...(await nanoGptGenerate(nano.key, pick.id, req.prompt, req.aspect)), model: ref };
     }
     if (pick.api === GEMINI_IMAGES_API) {
       const key = this.geminiKey();
       if (!key) throw new ModelNotConfiguredError("the Gemini connection has no key (Settings → API connections)");
-      return { ...(await geminiGenerate(key, pick.id, req.prompt)), model: ref };
+      return { ...(await geminiGenerate(key, pick.id, req.prompt, req.aspect)), model: ref };
     }
     const endpoint = imageEndpoint(this.paths, pick.provider);
     if (endpoint) {
-      return { ...(await endpointGenerate(endpoint.def, endpoint.key, pick.id, req.prompt)), model: ref };
+      return { ...(await endpointGenerate(endpoint.def, endpoint.key, pick.id, req.prompt, req.aspect)), model: ref };
     }
     const ctx = { input: [{ type: "text" as const, text: req.prompt }] };
     const viaConnection = (await this.imageConnections()).find((s) => s.id === pick.provider);

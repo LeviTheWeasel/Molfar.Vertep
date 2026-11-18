@@ -84,6 +84,39 @@ export interface ImageEndpointInfo extends ImageEndpointDef {
 }
 
 /** A failure with the HTTP status the image route should answer with. */
+/** The shape an app asks for (#455). Not pixels: each provider maps it to a size it supports; one that cannot ignores it. */
+export type ImageAspect = "square" | "wide" | "tall";
+export const IMAGE_ASPECTS: readonly ImageAspect[] = ["square", "wide", "tall"];
+export const parseImageAspect = (v: unknown): ImageAspect | undefined => ((IMAGE_ASPECTS as readonly unknown[]).includes(v) ? (v as ImageAspect) : undefined);
+const ASPECT_RATIO: Record<ImageAspect, number> = { square: 1, wide: 16 / 9, tall: 9 / 16 };
+/** The ratio as the providers that take "16:9" write it. */
+const ASPECT_LABEL: Record<ImageAspect, string> = { square: "1:1", wide: "16:9", tall: "9:16" };
+
+/** The size of a shape with the same pixel budget (width x height) as the endpoint's own size, in steps of 64 (what Stable
+ *  Diffusion and ComfyUI latents want): 1024x1024 becomes 1344x768 wide, 768x1344 tall. */
+export function shapeSize(width: number, height: number, aspect: ImageAspect): { width: number; height: number } {
+  const budget = width * height;
+  const r = ASPECT_RATIO[aspect];
+  const step = (n: number): number => Math.min(4096, Math.max(64, Math.round(n / 64) * 64));
+  return { width: step(Math.sqrt(budget * r)), height: step(Math.sqrt(budget / r)) };
+}
+
+/** Of the sizes a provider lists ("1024x1024"), the one whose shape is nearest to the asked one, then the nearest to a
+ *  1024x1024 budget; undefined when nothing in the list is a size. */
+export function nearestListedSize(sizes: readonly string[], aspect: ImageAspect): string | undefined {
+  const want = Math.log(ASPECT_RATIO[aspect]);
+  let best: { size: string; off: number; area: number } | undefined;
+  for (const size of sizes) {
+    const m = /^(\d{2,5})x(\d{2,5})$/.exec(size);
+    if (!m) continue;
+    const w = Number(m[1]);
+    const h = Number(m[2]);
+    const cand = { size, off: Math.abs(Math.log(w / h) - want), area: Math.abs(Math.log((w * h) / (1024 * 1024))) };
+    if (!best || cand.off < best.off - 1e-9 || (Math.abs(cand.off - best.off) <= 1e-9 && cand.area < best.area)) best = cand;
+  }
+  return best?.size;
+}
+
 export class ImageError extends Error {
   /** `message` is the English text; `code` + `vars` let the shell show it in the user's language (client `imageErrorText`). */
   constructor(
@@ -617,6 +650,13 @@ export interface ListedImageModel {
 }
 
 let nanoCache: { at: number; base: string; models: (ListedImageModel & { size?: string })[] } | null = null;
+/** Every size the catalog lists for a model, kept apart from the list the client sees (a shape asked for picks from it). */
+let nanoSizes = new Map<string, string[]>();
+/** For tests: drop the cached catalog. */
+export const clearNanoGptCache = (): void => {
+  nanoCache = null;
+  nanoSizes = new Map();
+};
 
 /** NanoGPT's image catalog (public; cached ten minutes). */
 export async function nanoGptImageModels(): Promise<ListedImageModel[]> {
@@ -627,6 +667,7 @@ export async function nanoGptImageModels(): Promise<ListedImageModel[]> {
   await failUnlessOk(res, who);
   const body = (await readJson(res, who)) as { data?: unknown };
   const models: (ListedImageModel & { size?: string })[] = [];
+  const lists = new Map<string, string[]>();
   for (const m of Array.isArray(body.data) ? body.data : []) {
     const r = m as { id?: unknown; name?: unknown; pricing?: { per_image?: Record<string, unknown> }; supported_parameters?: { resolutions?: unknown } };
     if (typeof r.id !== "string" || !r.id) continue;
@@ -635,8 +676,10 @@ export async function nanoGptImageModels(): Promise<ListedImageModel[]> {
     const price = size ? r.pricing?.per_image?.[size] : undefined;
     const name = typeof r.name === "string" && r.name ? r.name : r.id;
     models.push({ id: r.id, label: typeof price === "number" ? `${name} · $${price}` : name, ...(size ? { size } : {}) });
+    if (sizes.length) lists.set(r.id, sizes);
   }
   nanoCache = { at: Date.now(), base, models };
+  nanoSizes = lists;
   return models;
 }
 
@@ -653,9 +696,11 @@ async function readImagesAnswer(res: Response, who: string, ownOrigin: string | 
   throw new ImageError(`${who} answered without a picture`, 502, "no_picture", { who });
 }
 
-export async function nanoGptGenerate(key: string, model: string, prompt: string): Promise<{ data: Buffer; mimeType: string }> {
+export async function nanoGptGenerate(key: string, model: string, prompt: string, aspect?: ImageAspect): Promise<{ data: Buffer; mimeType: string }> {
   const who = "NanoGPT";
-  const size = nanoCache?.models.find((m) => m.id === model)?.size;
+  const listed = nanoCache?.models.find((m) => m.id === model);
+  // a shape asked for takes the listed size nearest to it; a model that lists none keeps its default
+  const size = (aspect && nanoSizes.has(model) ? nearestListedSize(nanoSizes.get(model) ?? [], aspect) : undefined) ?? listed?.size;
   const res = await call(
     `${imageHosts.nanogpt}/v1/images/generations`,
     {
@@ -704,7 +749,7 @@ export async function geminiImageModels(key: string): Promise<ListedImageModel[]
   return models;
 }
 
-export async function geminiGenerate(key: string, model: string, prompt: string): Promise<{ data: Buffer; mimeType: string }> {
+export async function geminiGenerate(key: string, model: string, prompt: string, aspect?: ImageAspect): Promise<{ data: Buffer; mimeType: string }> {
   const who = "Gemini";
   const imagen = isImagen(model);
   const res = await call(
@@ -713,8 +758,8 @@ export async function geminiGenerate(key: string, model: string, prompt: string)
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify(imagen
-        ? { instances: [{ prompt }], parameters: { sampleCount: 1 } }
-        : { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } }),
+        ? { instances: [{ prompt }], parameters: { sampleCount: 1, ...(aspect ? { aspectRatio: ASPECT_LABEL[aspect] } : {}) } }
+        : { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["TEXT", "IMAGE"], ...(aspect ? { imageConfig: { aspectRatio: ASPECT_LABEL[aspect] } } : {}) } }),
       timeout: GENERATE_TIMEOUT,
     },
     who,
@@ -1000,27 +1045,49 @@ export async function listEndpointOptions(def: ImageEndpointDef, key?: string): 
   return { samplers: names(req.sampler_name?.[0]), schedulers: names(req.scheduler?.[0]), loras: names(lora.LoraLoader?.input?.required?.lora_name?.[0]) };
 }
 
-export async function endpointGenerate(def: ImageEndpointDef, key: string | undefined, model: string, prompt: string): Promise<{ data: Buffer; mimeType: string }> {
+/** The sizes the OpenAI image models list, by shape. */
+const OPENAI_SIZES = {
+  gptImage: { square: "1024x1024", wide: "1536x1024", tall: "1024x1536" },
+  dalle3: { square: "1024x1024", wide: "1792x1024", tall: "1024x1792" },
+} as const;
+
+export async function endpointGenerate(def: ImageEndpointDef, key: string | undefined, model: string, prompt: string, aspect?: ImageAspect): Promise<{ data: Buffer; mimeType: string }> {
   const who = def.name;
   const base = normalizeUrl(def.baseUrl);
   await assertEndpointHost(base);
   const auth: Record<string, string> = key ? { authorization: `Bearer ${key}` } : {};
-  const width = def.width ?? 1024;
-  const height = def.height ?? 1024;
+  const ownW = def.width ?? 1024;
+  const ownH = def.height ?? 1024;
+  // a shape asked for keeps the endpoint's pixel budget (Settings > Images) and changes only the proportions
+  const { width, height } = aspect ? shapeSize(ownW, ownH, aspect) : { width: ownW, height: ownH };
 
   if (def.kind === "openai") {
     // gpt-image models always answer in base64 and reject response_format
-    const res = await call(
-      `${base}/images/generations`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", ...auth },
-        body: JSON.stringify({ model, prompt, n: 1, size: `${width}x${height}`, ...(/^gpt-image/i.test(model) ? {} : { response_format: "b64_json" }) }),
-        timeout: GENERATE_TIMEOUT,
-      },
-      who,
-    );
-    return readImagesAnswer(res, who, new URL(base).origin);
+    const post = async (size: string): Promise<{ data: Buffer; mimeType: string }> => {
+      const res = await call(
+        `${base}/images/generations`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json", ...auth },
+          body: JSON.stringify({ model, prompt, n: 1, size, ...(/^gpt-image/i.test(model) ? {} : { response_format: "b64_json" }) }),
+          timeout: GENERATE_TIMEOUT,
+        },
+        who,
+      );
+      return readImagesAnswer(res, who, new URL(base).origin);
+    };
+    const own = `${ownW}x${ownH}`;
+    if (!aspect) return post(own);
+    // the two OpenAI families take a fixed list of sizes; any other model gets the endpoint's budget reshaped, and a server
+    // that refuses that gets the endpoint's own size once more, so a shape never turns a picture into an error
+    const known = /^gpt-image/i.test(model) ? OPENAI_SIZES.gptImage : /^dall-e-3/i.test(model) ? OPENAI_SIZES.dalle3 : null;
+    if (known) return post(known[aspect]);
+    try {
+      return await post(`${width}x${height}`);
+    } catch (e) {
+      if (e instanceof ImageError && e.code === "refused") return post(own);
+      throw e;
+    }
   }
 
   const { positive, negative } = splitAvoid(prompt);
