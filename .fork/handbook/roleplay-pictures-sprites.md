@@ -1,5 +1,5 @@
 # Pictures in Roleplay: portraits, sprites and outfits, backgrounds, scene pictures, voice
-Verified at: molfar.vertep-roleplay 607147f; Backgrounds at ff6ecde (branch claude/278-place-keys, not merged)
+Verified at: molfar.vertep-roleplay 607147f; Backgrounds at 89fedb8
 
 ## What it does
 - A card has one portrait (its avatar) and an optional set of sprites: small pictures per emotion, sorted by outfit and, for a Narrator card, by voice.
