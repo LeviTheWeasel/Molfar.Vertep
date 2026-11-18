@@ -1,9 +1,9 @@
 # Pictures in Roleplay: portraits, sprites and outfits, backgrounds, scene pictures, voice
-Verified at: molfar.vertep-roleplay 607147f; Backgrounds at 89fedb8
+Verified at: molfar.vertep-roleplay 607147f; Backgrounds at 89fedb8; Sprite windows (#456) on branch claude/sprite-windows-456 (not merged yet)
 
 ## What it does
 - A card has one portrait (its avatar) and an optional set of sprites: small pictures per emotion, sorted by outfit and, for a Narrator card, by voice.
-- The chat shows the sprite that fits the last reply. Keyword rules in the app pick it. No model is called.
+- The chat shows the sprite that fits the last reply. Keyword rules in the app pick it. No model is called. A chat can have up to 8 sprite windows, each with one character (#456).
 - Backgrounds are a library per world. A chat shows one behind its messages, set by hand or switched by scene.
 - Pictures can be drawn during play. The chat model writes the description, the engine draws it, and the result is posted as a hidden picture message.
 
@@ -16,7 +16,9 @@ Verified at: molfar.vertep-roleplay 607147f; Backgrounds at 89fedb8
 - `src/lib/expressions.ts` `STANDARD_EXPRESSIONS`: the emotion list the editor and batch dialog offer.
 - `src/lib/expressions.ts` `parseSpriteFile`: reads emotion, voice and copy number from a file name.
 - `src/lib/expressions.ts` `resolveSprite`: picks a sprite from matched labels, within one outfit.
-- `src/lib/sprite-pick.ts` `pickSprite`: the sprite a reply shows.
+- `src/lib/sprite-pick.ts` `pickSprite`: the sprite a reply shows. `pickSpriteFor`: the sprite of one known speaker, which `pickSprite` and the windows end in.
+- `src/lib/sprite-stage.ts`: the pure parts of the sprite windows: `stageMembers` (who can be shown), `contributions` (a member's last line), `speakerOf`, `sceneKeys`, `assignSlots`, `resolveWindows`, `arrange`, `loadLayout` / `saveLayout`, `outfitsFor`.
+- `src/components/chat/expression-panel.tsx` `ExpressionPanel`, `SpriteWindow`, `StageMenu`: the floating windows and their gear menu.
 - `src/lib/sprite-batch.ts` `planBatch`: what a batch of dropped files adds or replaces.
 - `src/components/character/sprites-panel.tsx` `SpritesPanel`: the Sprites tab of the card editor.
 - `src/components/character/sprite-batch-dialog.tsx` `SpriteBatchDialog`: the dialog for many files at once.
@@ -46,6 +48,17 @@ Verified at: molfar.vertep-roleplay 607147f; Backgrounds at 89fedb8
   3. The outfit is the chat's choice for that speaker, else the card's outfit, else "default", else the first (`pickOutfit`).
   4. `resolveSprite` takes the first matched label the character has. Failing that: default expression, then neutral, then the first sprite.
 
+## Sprite windows (#456)
+- A window shows one character. `stageMembers` lists who can be shown: a group's members that own sprites, a Narrator card's voices that own sprites (plus the card itself when it has shared sprites), or the one card. Keys: `m:<card id>`, `v:<voice>`, `c:<card id>`.
+- A member's emotion comes from their last line (`contributions`, 40 assistant messages back): their own message, or their `Name:` lines in a narrator message. It stays until they speak again. A settled message is read once (`lineCache`).
+- A window's `who` is `speaker`, `auto` or a member key. A `speaker` window is the spotlight: the `auto` windows show the others. An `auto` window keeps its member while they are in the scene (`assignSlots`, kept in the layout's `slots`); a leaver blanks it, a newcomer takes a free one.
+- The scene is the Dashboard's `present` names when they match members (`sameName`: equal, or a first word equal to the other name), else the members who spoke in the last 6 assistant messages, else everyone.
+- The layout (`StageLayout`: windows with position, height, folded, transparent; `hideEmpty`; `slots`) is in `localStorage` under `rp.stage.<chat id>`, per browser. A chat with none starts from the old single window's keys (`expr-panel-pos`, `expr-panel-height`, `expr-panel-minimized`).
+- `arrange` and `addWindow` place windows inside the chat column (`[data-chat-id]`), from an estimated sprite width of 0.6 of the height.
+- A transparent window is `pointer-events: none` except its buttons; it is moved by its grip.
+- A phone shows window 1 and a strip of chips (`CastStrip`); a tap pins that character in the window until tapped again (not saved).
+- A group member's outfit choice is `spriteOutfits["@<card id>"]`; a solo card keeps `""`, a voice its name (`outfitsFor`, `memberSprite`).
+
 ## Backgrounds
 - A chat has a `backgroundId`. "none" hides the picture. When unset, the app's active background is used.
 - Backgrounds are image items with tags, kept in folders. A chat's `autoBackground` names a folder, with an on switch and an optional draw flag.
@@ -66,6 +79,7 @@ Text to speech has three modes: None, browser voices, or the engine's speech end
 
 ## If you change X, also touch Y
 - Emotion list (`RULES`, `STANDARD_EXPRESSIONS`): the Cyrillic stems, `SYNONYMS` and `parseSpriteFile` in `src/lib/expressions.ts`, and the datalist in `sprite-batch-dialog.tsx`.
+- Window layout or who a window shows: `src/lib/sprite-stage.ts` and `StageMenu` in `expression-panel.tsx`, the guide page `.skills/guide/pages/sprites.md` and the help article `kb.sprite-windows`.
 - Sprite shape: `mergeSprites` in `src/lib/sprite-batch.ts`, `SpritesPanel`, and `keepStoredSpriteImages` in `plugins/engine/plugin.js`, which keeps stored images on save.
 - Picture modes: `IMAGE_PROMPT_MODES` in `plugins/engine/plugin.js` and `IMAGE_MODES` in `src/lib/image-gen.ts`.
 - Picture tool text: `handleTool` and `IMAGE_TAGS_DESCRIPTION` in `plugins/tools/plugin.js`.
@@ -83,9 +97,10 @@ Text to speech has three modes: None, browser voices, or the engine's speech end
 - No image model gives a 503 with a plain message (`generateImage`).
 
 ## Tests that guard it
-test/rp-expressions.test.ts, test/rp-sprite-sets.test.ts, test/rp-portrait-prompt.test.ts, test/rp-dash-portraits.test.tsx, test/rp-autobg-draw.test.ts, test/rp-world-backgrounds.test.ts, test/rp-image-style.test.ts, test/rp-image-error.test.ts, test/rp-message-image.test.ts, test/rp-dialogue-voices.test.ts, test/rp-tools.test.ts. (File names only; I did not open them.)
+test/rp-expressions.test.ts, test/rp-sprite-sets.test.ts, test/rp-sprite-stage.test.ts, test/rp-portrait-prompt.test.ts, test/rp-dash-portraits.test.tsx, test/rp-autobg-draw.test.ts, test/rp-world-backgrounds.test.ts, test/rp-image-style.test.ts, test/rp-image-error.test.ts, test/rp-message-image.test.ts, test/rp-dialogue-voices.test.ts, test/rp-tools.test.ts. (File names only; I did not open them.)
 
 ## Not verified
+- Sprite windows were run in a browser only with drawn test sprites and a group seeded by hand: no real art, no real Dashboard scene, no streaming reply over several windows, no touch device.
 - How a generate_image call becomes a drawn picture after the reply. I saw only the comment in `handleTool`.
 - Where the engine stores the drawn file. `src/lib/image-gen.ts` says the engine keeps it in its asset store; I did not trace this in the engine repo.
 - Whether a picture attached to a chat message reaches the chat model. Attachments are stored on the message, but I found no code that sends them with the chat request.
