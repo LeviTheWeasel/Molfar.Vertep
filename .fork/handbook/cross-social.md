@@ -52,7 +52,7 @@ Traps:
 Change X, touch Y:
 - A limit or gap constant: `autoBlock`, `avgGapMs`, `Strip.tsx`, `test/forum-plugin.test.ts`.
 - A reaction emoji: `REACTIONS`, `reactionFor`, `readNotices`.
-- `relationBits`, `knowsOf`, `chatNote` or `lifeSubject`: the copy in `plugins/messenger/plugin.js`, since each plugin carries its own.
+- `relationBits`, `knowsOf`, `publicFacts` (the `public-facts-shared` block, also in the clubs plugin) or `lifeSubject`: the copy in `plugins/messenger/plugin.js`, since each plugin carries its own.
 - `PAGE_SIZE`: `topicRoute`, `Pager.tsx`, `SearchPage.tsx`.
 - `NOTICE_KINDS`: `noticesRoute`, `NoticesPage.tsx`, the badge in `src/lib/badges.ts`.
 
@@ -126,7 +126,7 @@ Change X, touch Y:
 - `reads` in `manifest.json`: also `RP_APP` in `plugins/profiles/plugin.js` and `test/profiles-import.test.ts`. Users are asked again on Home.
 - `buildMaterial`: every profile counts as changed once (`hashText`).
 - `networkHosts` in `manifest.json` and `SOURCES` in `plugins/life/plugin.js`: `test/life-plugin.test.ts` pins them.
-- `chatPath`: also `adoptLegacy` and `chatNote`, plus `removeChats` and `RESET_PARTS`.
+- `chatPath`: also `adoptLegacy` and `publicFacts`, plus `removeChats` and `RESET_PARTS`.
 - A screen string: `src/screens/<screen>/strings.ts` in `en` and `uk` (`test/skeleton.test.ts`).
 - `engine` in `manifest.json`: raise it only with the engine contract.
 - A catalog pack: `catalog/index.json`, its folder, LICENSE, per `catalog/README.md`; `test/stickers-catalog.test.ts`.

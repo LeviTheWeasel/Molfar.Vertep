@@ -12,7 +12,7 @@ They read profiles and the Life lists, and keep files under `chatter/`, `clubs/`
 - `plugins/chatter/plugin.js`, `relationLine`: the relationship line from Life.
 - `plugins/chatter/plugin.js`, `onTick`: files pending replies, else starts one request.
 - `plugins/clubs/plugin.js`, `pickTurn`: owed answers first, then idle talk.
-- `plugins/clubs/plugin.js`, `buildRequest`: the prompt; drops the user's lines when answers run out.
+- `plugins/clubs/plugin.js`, `buildRequest`: the prompt; drops the user's lines when answers run out. While the user is in the talk it adds `publicFacts` of the persona who wrote (#446 M3; `clubSystem` `userFacts`); the block is a copy of the forum's.
 - `plugins/clubs/plugin.js`, `modClub`: the Moderator's club, by rules only.
 - `plugins/clubs/plugin.js`, `sendRoute`: stores the user's message and makes the first reply.
 - `plugins/clubs/plugin.js`, `fileClubResult`: files a reply and counts it.

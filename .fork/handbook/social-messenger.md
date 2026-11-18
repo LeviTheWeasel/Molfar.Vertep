@@ -1,5 +1,5 @@
 # Social: the Messenger plugin, its chats, memory note and recall
-Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at f28fc28 (main, Social 0.18.0); the facts ledger (#446, M1) lines at e8893c8; the M2 lines (Remembered, pinned messages) on Social branch claude/memory-m2-446
+Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at f28fc28 (main, Social 0.18.0); the facts ledger (#446, M1) lines at e8893c8; the M2 lines (Remembered, pinned messages) at 874b6ea; the M3 line (public facts) on Social branch claude/memory-m3-446
 
 ## What it does
 - One chat per character and persona pair; a model writes each reply in the character's voice.
@@ -114,7 +114,7 @@ History is `historyFor` over the window: user messages as "user", the character'
 - `writeChat` keeps the newest 500 messages; the note is stored apart.
 - A chat with a pending reply is never folded; a failed chat keeps `pending`, so its note waits for a retry or a new conversation.
 - A failed reply is not retried by the tick; a lost call is asked again after 5 minutes; a failed fold is silent.
-- The forum and clubs read only the note, not the facts (M3 and M4 of #446 are not built); `private` is stored and shown but nothing reads it yet.
+- The forum and clubs read only the public facts (`private === false`) through `publicFacts`, never the note (M3, #446); they do not write facts (M4 is not built). `factsShare` in Settings cuts the readers off.
 - Writing first has no `used`; the forum and clubs do not read pinned messages. Stem overlap in `factsFor` is a stand-in for "nearest in meaning" (the recall vectors are not used for facts).
 - Pictures are drawn by the open Social page only (`docs/DECISIONS.md`).
 - Recalled text is data: `recallText` turns angle brackets into spaces and double quotes into single quotes.
