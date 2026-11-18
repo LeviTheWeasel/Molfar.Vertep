@@ -35,8 +35,9 @@
     return out;
   }
   function bytesToB64(bytes) {
+    // in slices: one string append per byte took ~120 ms for a 1.2 MB app storage, on every write (#418)
     var s = "";
-    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     return btoa(s);
   }
   function textToB64(text) { return bytesToB64(new TextEncoder().encode(text)); }

@@ -1,5 +1,5 @@
 # Apps: the shell bridge, read access between apps, app notifications
-Verified at: molfar.vertep 8310b23 (bridge limit line read at 0d2e559, the build route line at 2c6d4d0)
+Verified at: molfar.vertep 9b8c1fc (the storage line in Traps); the rest at: molfar.vertep 8310b23 (bridge limit line read at 0d2e559, the build route line at 2c6d4d0)
 
 ## What it does
 An app runs in a sandboxed frame and calls the shell through `window.molfarShell` (also `chrysalisShell`). The shell's host script accepts a frame message only when its nonce matches the frame's record. Engine requests from a frame are relayed by the shell and checked twice, in the browser and on the server. An app may read declared files of another app only after the user allows it. Shell actions and notifications are for trusted (official) apps only.
@@ -70,6 +70,7 @@ An app runs in a sandboxed frame and calls the shell through `window.molfarShell
 - The delete and rename routes in `buildApp`: keep calling `forgetGrants`, `forgetPeer` and `moveGrants`.
 
 ## Traps
+- An app's `localStorage` write costs the size of the app's whole storage, twice: the frame (`writeSnapshot` in `client/public/app-bridge.js`) stringifies, base64-encodes and writes all of it into its own address hash on every write, and the shell (`handleStorage` in `app-bridge-host.js`) parses, size-checks and rewrites all of it. With 1.2 MB stored that was about 190 ms in the frame alone (the base64 loop was 120 of them, now sliced) and about 0.4 s per typed letter before Roleplay's composer saved its draft after a pause (#418). An app that writes on every key or every stream tick should debounce.
 - The allowlist exists twice. A route added to one copy only is a gap, or a block the other copy does not share.
 - Every shell op needs `trusted`, including `notify`. An untrusted app gets an error for all of them.
 - `notify` skips the on-screen check, so a background app can change its count.

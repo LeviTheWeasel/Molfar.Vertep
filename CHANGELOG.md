@@ -7,6 +7,8 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+- **An app frame's storage writes are cheaper (#418).** The frame's snapshot of the app's storage (kept in its address so a reload keeps what was typed) was base64-encoded one character at a time, about 120 ms of every write with 1.2 MB stored. It is now encoded in slices (same output, about 20 ms). The bigger fix for the typing lag is in Roleplay's message box, which now saves the draft after a pause instead of on every key.
+
 ## 1.17.0 (2026-11-17)
 
 - **Updates dialog, apps with no update source (#318).** An app made on this device or copied in by hand now gets a quiet row too ("No update source", with a reason), next to the apps installed from a zip, so "where is my app" has an answer there.
