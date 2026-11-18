@@ -1,5 +1,5 @@
 # Social: the city (places, homes, who is where)
-Verified at: molfar.vertep-social f28fc28 (main, Social 0.18.0)
+Verified at: molfar.vertep-social 8d6971c (main, Social 0.18.1)
 
 ## What it does
 A town the characters live in. By rules, with no model call, it gives every profile a flat and works out, once per 3-hour band, where each character is. The user can look, listen, walk in and make places and districts of their own (issue 445, C1 to C3), and other plugins read where a character is (C4). #452 adds a wide picture to places and districts; #453 adds workplaces, shared flats, rooms that share the day's caps and stock names in the page's language. C5 draws each district as an isometric plate above the tiles. Packs (C6) are a later phase.
@@ -15,7 +15,7 @@ A town the characters live in. By rules, with no model call, it gives every prof
 - `plugins/city/plugin.js`, `placeRoute`, `districtRoute`, `gridFromHours`, `hoursOf`: C3, the user's places and districts (`POST /city/place|place/remove|district|district/remove|reset`); a stock one the user edits becomes `by: "you"`.
 - `src/screens/city/editors.tsx`: the place and district forms; `WidePicture`, `placePrompt`, `districtPrompt`; the picture is the profile's picture window in its `wide` mode (`src/screens/profiles/picture-dialog.tsx`).
 - `src/screens/city/index.tsx` `Detail` (the place's `background` behind the opened card, `.ct-detail.has-bd`); Homes has "Edit district" for its name and picture.
-- `src/screens/city/iso.ts` (`isoFrame`, `isoLots`, `isoAllLots`, `isoGrid`, `isoPin`, `isoHeight`, `KIND_LOOK`, `ISO_MAX`) and `src/screens/city/iso-map.tsx` (`IsoMap`, `isoSvg`): C5, the drawn district; `index.tsx` builds `mapSpots` and `pickOnMap` (opens the place, scrolls to `ct-cell-<id>` or, in Homes, `ct-b-<id>`). A district's `background` replaces the drawing under the same pins.
+- `src/screens/city/iso.ts` (`isoFrame`, `isoLots`, `isoAllLots`, `isoGrid`, `isoPin`, `isoHeight`, `KIND_LOOK`, `ISO_MAX`) and `src/screens/city/iso-map.tsx` (`IsoMap`, `isoSvg`): C5, the drawn district; `index.tsx` builds `mapSpots` and `pickOnMap` (opens the place, scrolls to `ct-cell-<id>` or, in Homes, `ct-b-<id>`). A district's `background` replaces the drawing under the same pins. Layout (0.18.1): `.ct-body` holds `.ct-map-col` and `.ct-list-col`; from 1000 px on desktop they sit side by side and the map column is sticky; on a phone the map column is hidden while a form is open.
 - `plugins/city/plugin.js`, `workplaceOf`: (#453) the profile's `workplace`, else that of the first tied boss, subordinate or colleague (by id); `whereAll` passes it to `placeAt` as `c.workplace`.
 - `plugins/city/plugin.js`, `homeGroups`, `assignHomes(homes, ids, groups)`: (#453) shared flats from ties marked `home: true` (`HOME_TIES`), either side.
 - `plugins/clubs/plugin.js`, `endRoom`, `roomCounts`, `roomPicture`: (#453) rooms share the day's counts in `clubs/state.json` `rooms`; (#452) a room's view carries `room.picture`.
