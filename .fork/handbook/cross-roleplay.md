@@ -195,6 +195,7 @@ Traps:
 
 Change X, touch Y:
 - Emotion list (`RULES`, `STANDARD_EXPRESSIONS`): the Cyrillic stems, `SYNONYMS` and `parseSpriteFile` in `src/lib/expressions.ts`, and the datalist in `sprite-batch-dialog.tsx`.
+- Window layout or who a window shows: `src/lib/sprite-stage.ts` and `StageMenu` in `expression-panel.tsx`, the guide page `.skills/guide/pages/sprites.md` and the help article `kb.sprite-windows`.
 - Sprite shape: `mergeSprites` in `src/lib/sprite-batch.ts`, `SpritesPanel`, and `keepStoredSpriteImages` in `plugins/engine/plugin.js`, which keeps stored images on save.
 - Picture modes: `IMAGE_PROMPT_MODES` in `plugins/engine/plugin.js` and `IMAGE_MODES` in `src/lib/image-gen.ts`.
 - Picture tool text: `handleTool` and `IMAGE_TAGS_DESCRIPTION` in `plugins/tools/plugin.js`.
