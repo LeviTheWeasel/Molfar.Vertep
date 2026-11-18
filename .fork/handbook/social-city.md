@@ -1,8 +1,8 @@
 # Social: the city (places, homes, who is where)
-Verified at: molfar.vertep-social a349f12 (branch claude/city-c1-445, stacked on the journal branch, not merged)
+Verified at: molfar.vertep-social 89bb944 (branch claude/city-c3-445, stacked on the journal J4 branch, not merged)
 
 ## What it does
-A town the characters live in. By rules, with no model call, it gives every profile a flat and works out, once per 3-hour band, where each character is. The user can look, listen and walk in (issue 445, C1 and C2); own places, packs and other plugins reading the place are later phases.
+A town the characters live in. By rules, with no model call, it gives every profile a flat and works out, once per 3-hour band, where each character is. The user can look, listen, walk in and make places and districts of their own (issue 445, C1 to C3); packs and other plugins reading the place are later phases.
 
 ## Owners
 - `plugins/city/plugin.js`, `stockTown`: the neutral present-day town (districts, places with an 8 by 7 open grid, tags, seats).
@@ -11,6 +11,8 @@ A town the characters live in. By rules, with no model call, it gives every prof
 - `plugins/city/plugin.js`, `placeAt`: where one profile is in a band (seeded draw, weights).
 - `plugins/city/plugin.js`, `whereAll`: everyone in id order, so every reader gets the same answer.
 - `plugins/city/plugin.js`, `cityView`, `handleRoute`: `GET /city`.
+- `plugins/city/plugin.js`, `placeRoute`, `districtRoute`, `gridFromHours`, `hoursOf`: C3, the user's places and districts (`POST /city/place|place/remove|district|district/remove|reset`); a stock one the user edits becomes `by: "you"`.
+- `src/screens/city/editors.tsx`: the place and district forms; the picture is the profile's picture window (`src/screens/profiles/picture-dialog.tsx`, `initialPrompt`).
 - `plugins/city/plugin.js`, `listenView`: `GET /city/listen`, the last 6 lines (3 days) of chatter pairs and clubs whose members are at the place, read only, never the user's.
 - `plugins/clubs/plugin.js`, `roomRoute`, `presentAt`, `byAcquaintance`, `sweepRooms`, `bandOf`: `POST /clubs/room`, a club with `room: {place, until}`; the tick removes it at `until`.
 - `src/screens/messenger/clubs.tsx`: the "Room" tag and "Leave the room" (`ClubHead`); `src/shell/nav.tsx` `openClub` carries the City to the Messenger.
@@ -33,10 +35,13 @@ Not by the city itself (a test uses a model that throws on any use). A room is a
 
 ## If you change X, also touch Y
 - Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
-- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`.
-- A place field: `cleanPlace`, `src/screens/city/api.ts`, the guide page `city`.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`.
+- A place field: `cleanPlace`, `placeRoute`, `cityView`, `src/screens/city/api.ts`, `editors.tsx`, the guide page `city`.
 
 ## Traps
+- The page translates a place or district name only when `by` is `stock`: anything the user touched shows its stored name, so editing a stock place freezes its name in the page's language of that moment.
+- At most 60 places and 12 districts; no place in the Homes district; Homes is never removed.
+- The picture is an asset url made by the picture window; the city never draws or uploads.
 - A room is a new club, so its daily caps start again every time the user walks in; it is outside `MAX_CLUBS`; one at a time; the room needs `city/now.json` to be of the current band (a stale file means "try again in a minute").
 - `bandOf` in the clubs plugin and `bandId` here are copies; change both.
 - Weights and the work hours are guesses.
@@ -48,4 +53,4 @@ Not by the city itself (a test uses a model that throws on any use). A room is a
 `test/city.test.ts`, `test/rooms.test.ts`.
 
 ## Not verified
-A real engine across a band change; the room's header with "Leave the room" in a browser (the preview has no room); a real model in a room; a phone; how the weights feel with real profiles; the guide translations.
+Drawing or uploading a picture for a place in a real engine; A real engine across a band change; the room's header with "Leave the room" in a browser (the preview has no room); a real model in a room; a phone; how the weights feel with real profiles; the guide translations.

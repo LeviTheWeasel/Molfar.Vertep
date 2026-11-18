@@ -8,10 +8,13 @@ rebuild this file. The page named in each heading has the detail.
 
 Change X, touch Y:
 - Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
-- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`.
-- A place field: `cleanPlace`, `src/screens/city/api.ts`, the guide page `city`.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`.
+- A place field: `cleanPlace`, `placeRoute`, `cityView`, `src/screens/city/api.ts`, `editors.tsx`, the guide page `city`.
 
 Traps:
+- The page translates a place or district name only when `by` is `stock`: anything the user touched shows its stored name, so editing a stock place freezes its name in the page's language of that moment.
+- At most 60 places and 12 districts; no place in the Homes district; Homes is never removed.
+- The picture is an asset url made by the picture window; the city never draws or uploads.
 - A room is a new club, so its daily caps start again every time the user walks in; it is outside `MAX_CLUBS`; one at a time; the room needs `city/now.json` to be of the current band (a stale file means "try again in a minute").
 - `bandOf` in the clubs plugin and `bandId` here are copies; change both.
 - Weights and the work hours are guesses.
