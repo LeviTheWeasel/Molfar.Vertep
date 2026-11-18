@@ -7,6 +7,8 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+## 1.18.0 (2026-11-18)
+
 - **`POST /v1/images` takes a shape (#455).** An optional `aspect` (`"square"`, `"wide"` or `"tall"`; anything else is ignored, never an error) asks for the proportions of the picture. Not pixels: each backend maps it to what it supports. ComfyUI and AUTOMATIC1111/Forge keep the endpoint's own pixel budget from Settings > Images and change only the proportions (1024 x 1024 becomes 1344 x 768 wide), without an `aspect` the endpoint's own width and height are used as before. An OpenAI-compatible endpoint gets the sizes `gpt-image` (1536 x 1024, 1024 x 1536) and `dall-e-3` (1792 x 1024, 1024 x 1792) list, any other model the reshaped budget, and if that server refuses the size the call is repeated once with the endpoint's own size, so a shape never turns a picture into an error. NanoGPT gets the model's listed size nearest to the shape (a model that lists none keeps its default). Gemini gets `aspectRatio` (Imagen) or `imageConfig.aspectRatio` (Gemini Image). Models reached through the pi-ai catalog and OpenRouter's image endpoint have no way to take a shape and ignore it. Tests: `test/images.test.ts`. Social's place and district pictures ask for `wide`.
 
 ## 1.17.1 (2026-11-18)
