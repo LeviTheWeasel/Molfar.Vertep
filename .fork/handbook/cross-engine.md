@@ -35,9 +35,11 @@ Change X, touch Y:
 - `patternMatches` in `src/apps/reads.ts`: also `seg` and `matches` in `peerSvc` in `src/plugins/sandbox-worker.mjs`.
 - `parseReads` or the `reads` manifest shape: also `validateAppManifest` in `src/apps/manager.ts`, `peerMounts`, and `test/app-reads.test.ts`.
 - `userPaths` in `src/paths.ts`: also `readGrants` and `writeGrants` in `src/apps/reads.ts`.
+- `GET /v1/apps/:id/build` answers `built` (dist/index.html exists); `src/builder/browser/host.ts` puts it on an error status so the shell and the standalone page can say "nothing to show yet" instead of "last good build" when no build ever finished (#337).
 - The delete and rename routes in `buildApp`: keep calling `forgetGrants`, `forgetPeer` and `moveGrants`.
 
 Traps:
+- An app's `localStorage` write costs the size of the app's whole storage, twice: the frame (`writeSnapshot` in `client/public/app-bridge.js`) stringifies, base64-encodes and writes all of it into its own address hash on every write, and the shell (`handleStorage` in `app-bridge-host.js`) parses, size-checks and rewrites all of it. With 1.2 MB stored that was about 190 ms in the frame alone (the base64 loop was 120 of them, now sliced) and about 0.4 s per typed letter before Roleplay's composer saved its draft after a pause (#418). An app that writes on every key or every stream tick should debounce.
 - The allowlist exists twice. A route added to one copy only is a gap, or a block the other copy does not share.
 - Every shell op needs `trusted`, including `notify`. An untrusted app gets an error for all of them.
 - `notify` skips the on-screen check, so a background app can change its count.
@@ -77,12 +79,13 @@ Change X, touch Y:
 - A permission name: `PluginPermission`, `hasCapAny`'s alias map, `declaredPermissions` and `grantsFor` in `src/server/app.ts`, and the approve route's default set.
 - `PLUGIN_HOOKS`: the `source.includes` pre-checks in `collectSiblingLlmHooks` and `collectInsertCeilings`.
 - `LLM_PATCH_FIELDS`: what an `llmRequest` hook may change.
-- `writeFileAtomic`: also used by `src/plugins/store.ts`; `test/atomic-write.test.ts`.
+- `writeFileAtomic`: also used by `src/plugins/store.ts`, `src/users.ts` and `src/sessions.ts` (#440); `test/atomic-write.test.ts`.
 
 Traps:
+- A full pool queues a call on the least loaded worker, and the worker's message handler is async: the two calls take turns on its one thread in small slices, and each one's clock runs for both. Measured with one worker: two calls of 1.5 s of work each both took 5.6 s. Calls of one app with `fs` cannot meet this way during a write (the gate gives a write the data folder alone), but reads of one app can, and so can calls of different apps or without `fs`.
 - Clocks apply per pass. A route with three model rounds makes three worker calls, and `runPluginRoute` sets no overall limit.
 - Store writes from a failed pass still apply: `applyStoreWrites` runs before the `!r.ok` check. Files written before a crash stay on disk, and a 500 queues no commit.
-- `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. Confirmed on `main` at 8310b23: a test in `test/plugins.test.ts` (`it.failing`, branch `claude/handbook-findings`, d8ef627) pins it. The Roleplay repository's manifests say `origin: "local"`, but an installed or updated app has every bundled plugin rewritten to `imported`, so installed Roleplay plugins are imported too (whether their `insertCeiling` runs then depends on the official install's grants: not checked, #422). The `llmRequest` loop gates on a declared `hooks` plus a granted `llm`; the proposed fix is the same gate here. Not changed: security code, waiting for review.
+- `insertCeiling` checks for a `hooks` grant. Imported plugins get no `hooks` from the approve defaults or `declaredPermissions`, so the hook silently does not run. Confirmed on `main` at 8310b23: a test in `test/plugins.test.ts` (`it.failing`, branch `claude/handbook-findings`, d8ef627) pins it. The Roleplay repository's manifests say `origin: "local"`, but installing or updating an app from its repository rewrites every bundled plugin to `imported` (`src/apps/store.ts`, `src/server/app.ts`), so installed Roleplay plugins are imported too; whether their `insertCeiling` runs depends on the grants an official install gives ("granted roleplay's bundled plugins the permissions they declare" in the log): not checked. The `llmRequest` loop gates on a declared `hooks` plus a granted `llm`; the proposed fix is the same gate here. Not changed: security code, waiting for review.
 - A manifest without `origin` is trusted: `hasCapAny` asks for grants only when origin is `imported`.
 - `PluginPermission` lists `fs:${string}`, but `hasCapAny` matches only the exact name `fs`.
 
@@ -149,4 +152,5 @@ Traps:
 - Staging copies follow `staging-latest`. Its title must read `Staging <version>`.
 - A tag that does not match `package.json`, or is not on main, fails `release.yml`.
 - An app's `engine` range is the app contract, not the engine version. Do not bump `APP_API_VERSION` for an ordinary release.
+- The fatal exits of `src/index.ts` (`main().catch` and the `uncaughtException` / `unhandledRejection` handlers) go through `fatalExit` (#440): a binary prints one plain line plus the log path, keeps the full stack in the log file only, and on Windows with a console holds the window ("Press Enter to close.") like `fail()`. A double-clicked `molfar-vertep.exe` loses any error that bypasses both. `UserService` throws `DataFileError` (readable, names the file) for a `users.json` that cannot be parsed and never starts with an empty list; `users.json` and `sessions.json` are written with `writeFileAtomic` (temp file and rename).
 - `rollback` for a downloaded program needs the `.old` files; the error text says 1.2.2 or newer keeps them.

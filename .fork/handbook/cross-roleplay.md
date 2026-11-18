@@ -143,7 +143,7 @@ Traps:
 - Constant entries are not exempt from `probability` or the budget.
 - A failed probability roll holds an entry for the whole reply. `delay` compares with the total message count.
 - Keys are not macro-expanded: `matchEntry` and `keyMatchDirect` never call `expandMacros`. `docs/ARCHITECTURE.md` says `keyMatch()` already has `expandMacros`, which the code does not show.
-- The server regex path has no time limit. Only the browser Worker times out.
+- The server regex path has no time limit, only the 20000-character cut and the result cap. Only the browser Worker times out.
 - The server cuts input to 20000 characters and returns only that cut text, so the rest is lost from a replaced message.
 - Keys read the saved text, so a save-stage script changes what the scan sees. A display-only script does not.
 

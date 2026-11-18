@@ -24,9 +24,10 @@ const sleep = (ms) => {
 /**
  * @param {string} full absolute path whose folder exists
  * @param {string} content
+ * @param {number} [newFileMode] permissions for a file that does not exist yet (an existing file keeps its own)
  */
-export function writeFileAtomic(full, content) {
-  let mode;
+export function writeFileAtomic(full, content, newFileMode) {
+  let mode = newFileMode;
   try { mode = fs.statSync(full).mode & 0o777; } catch { /* a new file */ }
   const tmp = path.join(path.dirname(full), `.${path.basename(full)}.${process.pid}.${Math.random().toString(36).slice(2, 10)}.tmp`);
   try {
@@ -42,7 +43,7 @@ export function writeFileAtomic(full, content) {
       }
     }
     // the rename stayed blocked: write in place, as before this helper existed
-    fs.writeFileSync(full, content, "utf8");
+    fs.writeFileSync(full, content, mode === undefined ? "utf8" : { encoding: "utf8", mode });
     fs.rmSync(tmp, { force: true });
   } catch (e) {
     try { fs.rmSync(tmp, { force: true }); } catch { /* best effort */ }

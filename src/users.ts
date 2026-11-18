@@ -9,6 +9,12 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { log } from "./logger.js";
+import { writeFileAtomic } from "./plugins/atomic-write.mjs";
+
+/** A data file that exists but cannot be read. The message says what to do; the engine prints it as it is. */
+export class DataFileError extends Error {
+  override name = "DataFileError";
+}
 
 /** Native bcrypt; same $2b$ format (and cost) as the library that wrote the
  *  hashes already on disk, so old records verify unchanged. */
@@ -55,8 +61,20 @@ export class UserService {
   constructor(private dataDir: string) {
     this.file = path.join(dataDir, "users.json");
     if (fs.existsSync(this.file)) {
-      const raw = JSON.parse(fs.readFileSync(this.file, "utf8")) as UsersFile;
-      this.users = raw.users ?? [];
+      let raw: UsersFile;
+      try {
+        raw = JSON.parse(fs.readFileSync(this.file, "utf8")) as UsersFile;
+      } catch (e) {
+        // an empty or cut-off file: what a power cut or a crash during a write leaves behind.
+        // Never start with an empty account list instead (that would show the first-run setup
+        // over someone's data), and never reset it: say what is wrong and what to do.
+        throw new DataFileError(
+          `${this.file} cannot be read (${(e as Error).message}). It was probably cut off by a crash or a power cut while it was being saved. ` +
+            `The accounts' own data in ${path.join(dataDir, "users")} is not touched. ` +
+            `To go on: close Molfar Vertep, rename that file (for example to users.json.damaged), start Molfar Vertep again and create the account again.`,
+        );
+      }
+      this.users = Array.isArray(raw?.users) ? raw.users : [];
     }
   }
 
@@ -86,7 +104,8 @@ export class UserService {
 
   private save(): void {
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
-    fs.writeFileSync(this.file, JSON.stringify({ users: this.users }, null, 2) + "\n", { encoding: "utf8", mode: 0o600 });
+    // temp file + rename, so a crash mid-write leaves the old list, not an empty file (#440)
+    writeFileAtomic(this.file, JSON.stringify({ users: this.users }, null, 2) + "\n", 0o600);
     try { fs.chmodSync(this.file, 0o600); } catch { /* umask oddity — best effort */ }
   }
 

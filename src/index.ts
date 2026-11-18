@@ -31,7 +31,7 @@ import { ServerSettings } from "./server/settings.js";
 import { stopSchedules } from "./plugins/runtime.js";
 import { stopLookWatchers } from "./server/look-watch.js";
 import { createSandbox } from "./sandbox/index.js";
-import { log, logToFile } from "./logger.js";
+import { currentLogFile, log, logFileOnly, logToFile } from "./logger.js";
 import { writeStdioApproval, type McpServerConfig } from "./mcp/registry.js";
 import { bindLegacyKeys } from "./connections.js";
 import { readLock, releaseLock, runningEngine, writeLock } from "./lock.js";
@@ -59,9 +59,34 @@ for (const evt of ["uncaughtException", "unhandledRejection"] as const) {
       log.warn(`${evt}: transient network error (${err.code}): ${err.message}`);
       return;
     }
-    log.error(`${evt}: ${err?.stack ?? String(err)}`);
-    process.exit(1);
+    fatalExit(evt, err);
   });
+}
+
+/**
+ * The process is going down on an error nobody handled. A double-clicked molfar-vertep.exe has a console
+ * window that disappears with the process, so on Windows (binary, a real console) the reason is printed in
+ * one plain line with the log file, and the window is held like `fail()` does (#440). The long stack goes to
+ * the log file only; a source checkout keeps the full console output.
+ */
+let exiting = false;
+function fatalExit(label: string, err: unknown): never {
+  if (exiting) process.exit(1);
+  exiting = true;
+  const e = err as Error | undefined;
+  const file = currentLogFile();
+  const held = process.platform === "win32" && INSTALL_KIND === "binary" && process.stdin.isTTY;
+  if (INSTALL_KIND === "binary") {
+    logFileOnly("ERROR", `${label}: ${e?.stack ?? String(err)}`);
+    const reason = String(e?.message ?? err).split("\n")[0];
+    console.error(`\nmolfar-vertep stopped: ${reason}${file ? `\nDetails: ${file}` : ""}`);
+  } else {
+    log.error(`${label}: ${e?.stack ?? String(err)}`);
+  }
+  try {
+    if (held) prompt("Press Enter to close.");
+  } catch { /* no console to wait on */ }
+  process.exit(1);
 }
 
 const runCmd = promisify(execFile);
@@ -903,7 +928,4 @@ async function start(homeDir: string, dataDir: string, loaded: LoadedConfig): Pr
   }
 }
 
-main().catch((e) => {
-  log.error("fatal:", e);
-  process.exit(1);
-});
+main().catch((e) => fatalExit("fatal", e));

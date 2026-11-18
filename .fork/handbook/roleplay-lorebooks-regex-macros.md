@@ -1,5 +1,5 @@
 # Lorebooks, regex scripts and macros
-Verified at: molfar.vertep-roleplay efead2b (sections: Owners, Lorebook entry, The scan, secret entries); Owners, Traps also 4e0989b; the rest at 56bf594; scan step 14 (budget) at c603c31
+Verified at: molfar.vertep-roleplay 611d00a (the flags and cap lines); the rest at: molfar.vertep-roleplay efead2b (sections: Owners, Lorebook entry, The scan, secret entries); Owners, Traps also 4e0989b; the rest at 56bf594; scan step 14 (budget) at c603c31
 
 ## What it does
 Lorebook entries enter the prompt by keys, by constant status, or by a vector match over a threshold. One server function runs the scan, budget and placement. Regex scripts rewrite text on save, on edit, in the prompt, or only for display. Macros are expanded on the server. The browser shows why each entry fired and runs a keyword test through the same scanner.
@@ -64,8 +64,9 @@ Secret entries: each item gets `secretV` once per scan (known: content; cover; m
   - Edit: scripts with `runOnEdit` run when a saved message is edited (the caller is line 7114 of `plugins/engine/plugin.js`).
   - Prompt: `promptOnly` scripts run on the outgoing prompt, including `wi` text.
   - Display: `markdownOnly` scripts run in the browser.
-- Server guards: find patterns over 500 characters are skipped, input is cut to 20000 characters, and a literal-head check skips patterns that cannot match.
-- Browser guards (`src/lib/safe-regex.ts`): a Worker with a 300 ms limit for display and 400 ms in the regex view. A timed-out pattern goes into `badPatterns` and is skipped, and the Worker is replaced. A new Worker gets `COLD_START_MS` extra time.
+- Server guards: find patterns over 500 characters are skipped, input is cut to 20000 characters, a literal-head check skips patterns that cannot match, and a result over 3,000,000 characters leaves the text as it was (#442).
+- Browser guards (`src/lib/safe-regex.ts`): a Worker with a 300 ms limit for display and 400 ms in the regex view. A timed-out pattern goes into `badPatterns` and is skipped, and the Worker is replaced. A new Worker gets `COLD_START_MS` extra time. A result over `MAX_OUTPUT_CHARS` (3,000,000) is dropped, the text stays as it was, and the pattern is not marked bad (#442).
+- Flags: an empty `flags` string means no `g`, the first match only, on both paths (`applyRegexScript`, the Worker). `regexImport` keeps the slash form's flags exactly (`/(?:)/` gives `""`; it used to give `g`, which put the Voyage preset's stylesheet script at every position of every reply, #442). A script with no `flags` field, and a bare pattern without slashes, stay global. `plugins/litopys` and `plugins/relations` still read an empty flags string as `g` when they compile prompt-stripping patterns.
 
 ## Macros
 `expandMacros` does the replacement, after `expandIfBlocks` handles `{{#if}}`. `macroLookup` resolves operand names.
@@ -89,7 +90,7 @@ Secret entries: each item gets `secretV` once per scan (known: content; cover; m
 - Constant entries are not exempt from `probability` or the budget.
 - A failed probability roll holds an entry for the whole reply. `delay` compares with the total message count.
 - Keys are not macro-expanded: `matchEntry` and `keyMatchDirect` never call `expandMacros`. `docs/ARCHITECTURE.md` says `keyMatch()` already has `expandMacros`, which the code does not show.
-- The server regex path has no time limit. Only the browser Worker times out.
+- The server regex path has no time limit, only the 20000-character cut and the result cap. Only the browser Worker times out.
 - The server cuts input to 20000 characters and returns only that cut text, so the rest is lost from a replaced message.
 - Keys read the saved text, so a save-stage script changes what the scan sees. A display-only script does not.
 

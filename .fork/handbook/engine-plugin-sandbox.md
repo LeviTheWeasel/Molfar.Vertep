@@ -1,5 +1,5 @@
 # App plugins: the sandbox, the host API, hooks and limits
-Verified at: molfar.vertep 1593219; Timing and the Traps on a shared worker at branch claude/sandbox-timing (1.16.8); `executionMs` for every plugin and its hooks at branch claude/limits-imported (1.16.9)
+Verified at: molfar.vertep 9b8c1fc (the `writeFileAtomic` lines, #440); the rest at: molfar.vertep 1593219; Timing and the Traps on a shared worker at branch claude/sandbox-timing (1.16.8); `executionMs` for every plugin and its hooks at branch claude/limits-imported (1.16.9)
 
 ## What it does
 An app plugin is `plugins/<id>/plugin.js` with a `manifest.json` beside it, inside an app folder. Each call evaluates the current source in a QuickJS runtime owned by a pooled worker thread. The plugin asks for models and the network through `host`, and the engine does that work between passes. A call that fails or overruns ends its worker. Manifest permissions gate each capability.
@@ -17,7 +17,7 @@ An app plugin is `plugins/<id>/plugin.js` with a `manifest.json` beside it, insi
 - `src/plugins/sandbox.ts` `noteTiming` and `src/plugins/sandbox-timing.ts`: where a call's time went; the slow-call log line and the note on a time-limit error (#422).
 - `src/plugins/sandbox-worker.mjs` `harnessCode`: wraps `plugin.js` and picks the hook.
 - `src/plugins/sandbox-worker.mjs` `fsSvc`: the `host.fs` jail.
-- `src/plugins/atomic-write.mjs` `writeFileAtomic`: temp file, then rename over the target.
+- `src/plugins/atomic-write.mjs` `writeFileAtomic(full, content, newFileMode?)`: temp file, then rename over the target; an existing file keeps its mode, `newFileMode` is for a new one (#440).
 - `src/plugins/store.ts` `PluginStoreService`: per-plugin JSON store.
 - `src/plugins/script-box.ts` `SCRIPT_LIMITS`: limits for `host.script` runs.
 - `src/server/app.ts` `dispatchAppRoute`: app route entry; queues the commit of a route's writes.
@@ -90,7 +90,7 @@ Reload: `discoverPlugins` checks file mtimes on each app request and re-reads on
 - A permission name: `PluginPermission`, `hasCapAny`'s alias map, `declaredPermissions` and `grantsFor` in `src/server/app.ts`, and the approve route's default set.
 - `PLUGIN_HOOKS`: the `source.includes` pre-checks in `collectSiblingLlmHooks` and `collectInsertCeilings`.
 - `LLM_PATCH_FIELDS`: what an `llmRequest` hook may change.
-- `writeFileAtomic`: also used by `src/plugins/store.ts`; `test/atomic-write.test.ts`.
+- `writeFileAtomic`: also used by `src/plugins/store.ts`, `src/users.ts` and `src/sessions.ts` (#440); `test/atomic-write.test.ts`.
 
 ## Traps
 - A full pool queues a call on the least loaded worker, and the worker's message handler is async: the two calls take turns on its one thread in small slices, and each one's clock runs for both. Measured with one worker: two calls of 1.5 s of work each both took 5.6 s. Calls of one app with `fs` cannot meet this way during a write (the gate gives a write the data folder alone), but reads of one app can, and so can calls of different apps or without `fs`.

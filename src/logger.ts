@@ -44,6 +44,16 @@ export const log = {
   },
 };
 
+/** The log file once `logToFile` has run, else null. */
+export function currentLogFile(): string | null {
+  return logFile;
+}
+
+/** A line for the log file only (a long stack that the console gets in short). */
+export function logFileOnly(level: "ERROR" | "WARN" | "INFO", ...args: unknown[]): void {
+  toFile(level.padEnd(5), args);
+}
+
 /** Start copying log lines to <dataDir>/logs/molfar-vertep.log. The log of
  *  1.7.x and older, chrysalis.log, is carried over under the new name. */
 export function logToFile(dataDir: string): string {
