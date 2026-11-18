@@ -10,7 +10,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
-  ImageError, comfyVars, createImageEndpoint, endpointGenerate, endpointPromptStyle, listEndpointOptions, imageEndpoint, imageHosts, listEndpointModels, listImageEndpoints,
+  ImageError, clearNanoGptCache, nearestListedSize, parseImageAspect, shapeSize, comfyVars, createImageEndpoint, endpointGenerate, endpointPromptStyle, listEndpointOptions, imageEndpoint, imageHosts, listEndpointModels, listImageEndpoints,
   geminiGenerate, geminiImageModels, nanoGptGenerate, nanoGptImageModels, providerError, imageErrorBody, setComfyPollMs, splitAvoid, updateImageEndpoint, validateImageEndpointInput,
   type ImageEndpointDef,
 } from "../src/images.js";
@@ -634,5 +634,107 @@ describe("a workflow exported from ComfyUI", () => {
     expect(!editor.ok && editor.error).toMatch(/Export \(API\)/);
     const noPrompt = validateImageEndpointInput({ name: "Local", kind: "comfyui", baseUrl: "http://127.0.0.1:8188", workflow: JSON.stringify({ "1": { class_type: "SaveImage", inputs: {} } }) });
     expect(!noPrompt.ok && noPrompt.error).toMatch(/no prompt node/);
+  });
+});
+
+describe("a shape asked for (#455)", () => {
+  const ok = () => json({ data: [{ b64_json: PNG.toString("base64") }] });
+  const lastBody = () => seen.filter((s) => s.method === "POST").at(-1)!.body as Record<string, unknown>;
+
+  it("keeps the pixel budget, in steps of 64, and knows only the three shapes", () => {
+    expect(shapeSize(1024, 1024, "wide")).toEqual({ width: 1344, height: 768 });
+    expect(shapeSize(1024, 1024, "tall")).toEqual({ width: 768, height: 1344 });
+    expect(shapeSize(1024, 1024, "square")).toEqual({ width: 1024, height: 1024 });
+    expect(shapeSize(512, 512, "wide")).toEqual({ width: 704, height: 384 });
+    expect(shapeSize(64, 64, "tall").width).toBe(64);
+    expect(parseImageAspect("wide")).toBe("wide");
+    expect(parseImageAspect("panorama")).toBeUndefined();
+    expect(parseImageAspect(undefined)).toBeUndefined();
+    expect(parseImageAspect(16)).toBeUndefined();
+  });
+
+  it("picks the listed size nearest to the shape, then nearest to one megapixel", () => {
+    expect(nearestListedSize(["768x768", "1024x1024", "1536x1024", "1024x1536"], "wide")).toBe("1536x1024");
+    expect(nearestListedSize(["768x768", "1024x1024", "1536x1024", "1024x1536"], "tall")).toBe("1024x1536");
+    expect(nearestListedSize(["768x768", "1024x1024"], "square")).toBe("1024x1024");
+    // only square sizes listed: the nearest is still one of them, never nothing
+    expect(nearestListedSize(["768x768", "1024x1024"], "wide")).toBe("1024x1024");
+    expect(nearestListedSize(["auto", "x"], "wide")).toBeUndefined();
+    expect(nearestListedSize([], "wide")).toBeUndefined();
+  });
+
+  it("A1111 and ComfyUI take the endpoint's budget in the asked shape; without a shape the endpoint's own size", async () => {
+    const a1111: ImageEndpointDef = { name: "Forge", kind: "a1111", baseUrl: base, width: 1024, height: 1024 };
+    reset({ "POST /sdapi/v1/txt2img": () => json({ images: [PNG.toString("base64")] }) });
+    await endpointGenerate(a1111, undefined, "m", "a town", "wide");
+    expect(lastBody()).toMatchObject({ width: 1344, height: 768 });
+    await endpointGenerate(a1111, undefined, "m", "a town");
+    expect(lastBody()).toMatchObject({ width: 1024, height: 1024 });
+    reset({
+      "POST /prompt": () => json({ prompt_id: "s1" }),
+      "GET /history/s1": () => json({ s1: { status: { completed: true }, outputs: { "9": { images: [{ filename: "a.png", type: "output" }] } } } }),
+      "GET /view": () => new Response(PNG, { headers: { "content-type": "image/png" } }),
+    });
+    await endpointGenerate({ name: "Comfy", kind: "comfyui", baseUrl: base, width: 832, height: 1216 }, undefined, "m", "a town", "wide");
+    const graph = (seen.find((x) => x.path === "/prompt")!.body as { prompt: Record<string, { inputs: Record<string, unknown> }> }).prompt;
+    const latent = Object.values(graph).find((n) => "width" in n.inputs && "height" in n.inputs)!;
+    // 832 x 1216 is about a megapixel: the wide one is 1152 x 896 at 16:9 rounded to 64 (1152 x 896 is not 16:9, so check the order only)
+    expect(Number(latent.inputs.width)).toBeGreaterThan(Number(latent.inputs.height));
+  });
+
+  it("an OpenAI-compatible endpoint: the listed sizes of gpt-image and dall-e-3, a reshaped budget for the rest, and the endpoint's own size if that is refused", async () => {
+    const def: ImageEndpointDef = { name: "Imgs", kind: "openai", baseUrl: `${base}/v1`, models: ["flux-dev", "gpt-image-1", "dall-e-3"] };
+    reset({ "POST /v1/images/generations": ok });
+    await endpointGenerate(def, "k", "gpt-image-1", "x", "wide");
+    expect(lastBody()).toMatchObject({ size: "1536x1024" });
+    await endpointGenerate(def, "k", "gpt-image-1", "x", "tall");
+    expect(lastBody()).toMatchObject({ size: "1024x1536" });
+    await endpointGenerate(def, "k", "dall-e-3", "x", "wide");
+    expect(lastBody()).toMatchObject({ size: "1792x1024" });
+    await endpointGenerate(def, "k", "flux-dev", "x", "wide");
+    expect(lastBody()).toMatchObject({ size: "1344x768" });
+    await endpointGenerate(def, "k", "flux-dev", "x");
+    expect(lastBody()).toMatchObject({ size: "1024x1024" });
+    // a server that refuses the reshaped size is asked again with the endpoint's own
+    reset({ "POST /v1/images/generations": (_r, body) => ((body as { size?: string }).size === "1344x768" ? json({ error: { message: "bad size" } }, 400) : ok()) });
+    const out = await endpointGenerate(def, "k", "flux-dev", "x", "wide");
+    expect(out.data.equals(PNG)).toBe(true);
+    expect(seen.map((x) => (x.body as { size: string }).size)).toEqual(["1344x768", "1024x1024"]);
+    // a refusal that is not about the size (no key) is not retried
+    reset({ "POST /v1/images/generations": () => json({ error: { message: "no" } }, 401) });
+    expect((await rejects(endpointGenerate(def, "k", "flux-dev", "x", "wide"))).status).toBe(401);
+    expect(seen).toHaveLength(1);
+  });
+
+  it("NanoGPT sends the model's listed size nearest to the shape, and its default when it lists none", async () => {
+    clearNanoGptCache();
+    reset({
+      "GET /api/v1/image-models": () => json({ data: [
+        { id: "multi", name: "Multi", supported_parameters: { resolutions: ["1024x1024", "1536x1024", "1024x1536"] } },
+        { id: "plain", name: "Plain" },
+      ] }),
+      "POST /v1/images/generations": ok,
+    });
+    await nanoGptImageModels();
+    await nanoGptGenerate("k", "multi", "x", "wide");
+    expect(lastBody()).toMatchObject({ size: "1536x1024" });
+    await nanoGptGenerate("k", "multi", "x");
+    expect(lastBody()).toMatchObject({ size: "1024x1024" });
+    await nanoGptGenerate("k", "plain", "x", "wide");
+    expect(lastBody()).not.toHaveProperty("size");
+  });
+
+  it("Gemini sends the ratio: aspectRatio for Imagen, imageConfig for Gemini Image", async () => {
+    imageHosts.gemini = base;
+    reset({
+      "POST /v1beta/models/imagen-4.0-generate-001:predict": () => json({ predictions: [{ bytesBase64Encoded: PNG.toString("base64") }] }),
+      "POST /v1beta/models/gemini-2.5-flash-image:generateContent": () => json({ candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: PNG.toString("base64") } }] } }] }),
+    });
+    await geminiGenerate("g", "imagen-4.0-generate-001", "x", "wide");
+    expect(lastBody()).toMatchObject({ parameters: { sampleCount: 1, aspectRatio: "16:9" } });
+    await geminiGenerate("g", "gemini-2.5-flash-image", "x", "tall");
+    expect(lastBody()).toMatchObject({ generationConfig: { imageConfig: { aspectRatio: "9:16" } } });
+    await geminiGenerate("g", "imagen-4.0-generate-001", "x");
+    expect((lastBody() as { parameters: object }).parameters).not.toHaveProperty("aspectRatio");
   });
 });

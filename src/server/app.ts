@@ -62,7 +62,7 @@ import {
   EDGE_FORMATS, EDGE_VOICES, createSpeechEndpoint, deleteSpeechEndpoint, edgeSpeakFmt,
   endpointSpeak, listSpeechEndpoints, speechEndpointKey, updateSpeechEndpoint, validateSpeechEndpointInput,
 } from "../speech.js";
-import { ImageError, adaptComfyWorkflow, imageErrorBody, comfyWorkflowProblem, createImageEndpoint, deleteImageEndpoint, listImageEndpoints, updateImageEndpoint, validateImageEndpointInput, validateImageFavorites, writeImageFavorites } from "../images.js";
+import { ImageError, adaptComfyWorkflow, parseImageAspect, imageErrorBody, comfyWorkflowProblem, createImageEndpoint, deleteImageEndpoint, listImageEndpoints, updateImageEndpoint, validateImageEndpointInput, validateImageFavorites, writeImageFavorites } from "../images.js";
 import type { EdgeFormat } from "../speech.js";
 import * as assets from "../assets/store.js";
 import * as assetCleanup from "../assets/cleanup.js";
@@ -1846,12 +1846,15 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
   // chats and cards that keep it stay small, and app pages (CSP img-src
   // 'self') can show it directly
   app.post("/v1/images", async (c) => {
-    const body = await c.req.json<{ prompt?: unknown; model?: unknown }>().catch(() => ({}) as { prompt?: unknown; model?: unknown });
+    const body = await c.req.json<{ prompt?: unknown; model?: unknown; aspect?: unknown }>().catch(() => ({}) as { prompt?: unknown; model?: unknown; aspect?: unknown });
     if (typeof body.prompt !== "string" || !body.prompt.trim()) return c.json({ error: "prompt required" }, 400);
+    // the shape is a wish, not a size: a value the engine does not know is left out, never an error
+    const aspect = parseImageAspect(body.aspect);
     try {
       const out = await c.get("models").generateImage({
         prompt: body.prompt.slice(0, 4000),
         ...(typeof body.model === "string" && body.model ? { model: body.model } : {}),
+        ...(aspect ? { aspect } : {}),
       });
       const ext = out.mimeType.split("/")[1]?.replace(/[^a-z0-9]/g, "") || "png";
       const rec = assets.putAsset(c.get("paths"), out.data, out.mimeType, `image.${ext}`, c.get("bridgeApp")?.id ?? null);

@@ -1,5 +1,5 @@
 # Social: profiles, the import from Roleplay, the user's own page, the picture worker, stickers
-Verified at: molfar.vertep-social 748197a; the picture worker line at 6dc9606
+Verified at: molfar.vertep-social 748197a; the picture worker line at 6dc9606; the #452 and #453 lines at f28fc28 (main, Social 0.18.0)
 
 ## What it does
 Each character is one file, `profiles/<id>.json`. A profile is made by hand, from an idea, or by a one-time digest of a Roleplay card. The user's personas live in `you.json`. Plugins file pictures as pending and the open Social page draws them. Sticker packs name engine assets; the free catalog comes from GitHub.
@@ -38,6 +38,7 @@ Written by `PUT /profiles/<id>` (id: letters, digits, `_`, `-`, 60 at most). Eac
 - `knows`: "knows", "name" or "stranger"; saved only when set.
 - `adult`: true only when marked; `stickerPacks`: pack ids (40 at most), saved only when not empty.
 - `schedule`: 8 bands of 3 hours by 7 days, each "online", "away", "dnd", "na" or "off".
+- `workplace` (#453): a City place id, saved only when set; edited in Status schedule > Work (`StatusesTab.tsx`, the places from `GET /city`). The city checks that the place exists.
 - `createdAt`, `updatedAt`: stamped by the plugin on save.
 
 ## Making a profile
@@ -66,6 +67,9 @@ Written by `PUT /profiles/<id>` (id: letters, digits, `_`, `-`, 60 at most). Eac
 - Characters see only the active persona's name and About (600 characters at most). Deleting the active persona passes it to the first left; `forgetPersona` removes its chats and `life/people` entries.
 - Deleting a profile (`DELETE /profiles/<id>`) removes its profile file, diary, people file, chats, recall cache and club places. No picture asset is deleted.
 - Start over (`POST /settings/reset`): profiles also clear chats, diaries and journals (`journal` part, own posts included); sticker packs stay.
+
+## The picture window
+`src/screens/profiles/picture-dialog.tsx` `PictureDialog` is shared with the City: `wide` (#452) shows a 16:9 frame instead of the avatar and uploads keep `WIDE_SIDE` (1280 px, `picture-api.ts`) instead of `PICTURE_MAX_SIDE` (768); `title` and `initialPrompt` replace the portrait's.
 
 ## The picture worker
 1. A character asks for a picture with `[[image: ...]]`, or an `image` field on a forum topic, only when Settings > Pictures is on and the daily cap (`perDay`, 2 by default) is not used.
