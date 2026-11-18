@@ -1,5 +1,5 @@
 # Social: the Forum plugin and its screens
-Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at f28fc28 (main, Social 0.18.0)
+Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at f28fc28 (main, Social 0.18.0); the public-facts lines (#446 M3) on Social branch claude/memory-m3-446
 
 ## What it does
 - Boards, topics and posts written by the user and the characters. The Moderator (author id `_mod`) runs events, comments, closes and a daily chronicle.
@@ -51,7 +51,7 @@ Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at f28fc28 (m
 4. Recent diary lines from `recentDays`, to be taken as true.
 5. The user: name and About (600 characters) from `userKnownTo`. `knowsOf` gives `knows`, `name` or `stranger`; `stranger` hides the name, and the prompt then says not to guess it.
 6. Met lines (`metLine`) and the `met` text from `requestPlan`: feeling toward the post's author, jealousy (`jealousLine`), and a rumour about the author (`aboutMeLine`).
-7. The private note (`chatNote`, cut to 800). Only for a reply to the user, when the author is not a stranger and the messenger's note switch is on. It must not be quoted.
+7. The public facts of the chat (`publicFacts`, #446 M3: only `private === false`, at most 12 and about 1000 characters, never the memory note). Only for a reply to the user, when the author is not a stranger, the messenger's memory switch and Settings "Public facts leave the chat" (`factsShare`) are on.
 8. Length, emoji level and formality. Never write (up to 12) and signature words (up to 8).
 9. Plain text only, and the language of the recent posts. Do not invent facts.
 10. Picture and sticker hints.
@@ -97,7 +97,7 @@ Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at f28fc28 (m
 ## If you change X, also touch Y
 - A limit or gap constant: `autoBlock`, `avgGapMs`, `Strip.tsx`, `test/forum-plugin.test.ts`.
 - A reaction emoji: `REACTIONS`, `reactionFor`, `readNotices`.
-- `relationBits`, `knowsOf`, `chatNote` or `lifeSubject`: the copy in `plugins/messenger/plugin.js`, since each plugin carries its own.
+- `relationBits`, `knowsOf`, `publicFacts` (the `public-facts-shared` block, also in the clubs plugin; `test/public-facts.test.ts`) or `lifeSubject`: the copy in `plugins/messenger/plugin.js`, since each plugin carries its own.
 - `PAGE_SIZE`: `topicRoute`, `Pager.tsx`, `SearchPage.tsx`.
 - `NOTICE_KINDS`: `noticesRoute`, `NoticesPage.tsx`, the badge in `src/lib/badges.ts` (which also polls `/journal/unread` for the Journal's badge since #453).
 
