@@ -1,6 +1,6 @@
 # Social: the Life plugin and the profile's daily life
 
-Verified at: molfar.vertep-social 7587013
+Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
 
 ## What it does
 The Life plugin (`plugins/life/plugin.js`) writes a daily diary per character (rules plus one model call), a list of people each character has met, one shared news feed per day from fixed hosts, and the user's weather place. Schedule and status live on the profile; Life does not enforce them.
@@ -49,7 +49,7 @@ The Life plugin (`plugins/life/plugin.js`) writes a daily diary per character (r
 ## Known people, relations, map, family tree
 - **Counting.** `scanPeople` reads `forum/topics` and `chats` through `topicEvents` and `chatEvents`. "Events" means meetings with a person. Life has no calendar.
 - **Levels.** Seven rungs in `LEVELS`. `autoIndex` sets the automatic rung from talks, sightings and feeling. A hand-set level is a floor unless pinned (`settle`). A feeling of -3 or less caps the automatic rung at acquaintance.
-- **Ties.** `TIE_TYPES` lists family, work, rival and romance. Romance needs adults. `setRelation` mirrors family and work ties to the other file, never romance.
+- **Ties.** `TIE_TYPES` lists family, work, rival and romance. Romance needs adults. `setRelation` mirrors family and work ties to the other file, never romance. (#453) A family or romantic tie (`HOME_TIES`, the same list in the city plugin) may carry `home: true`, "Lives together", set by one switch per person in `RelationEditor.tsx`; `cleanTies` drops it on any other tie and `mirrorTies` carries it. The city reads it (`homeGroups`) to give both one flat.
 - **Impressions.** `noteDue` allows one call per local day for up to five people with three or more new meetings, key `pn:<id>`.
 - **Hand notes.** `PUT /life/people/<id>/<key>` saves the user's wording.
 - **Who knows her.** `knownBy` in `GET /life/people/<id>`, at most 20 characters.

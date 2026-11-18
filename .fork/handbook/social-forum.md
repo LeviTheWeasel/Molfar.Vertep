@@ -1,5 +1,5 @@
 # Social: the Forum plugin and its screens
-Verified at: molfar.vertep-social 748197a
+Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
 
 ## What it does
 - Boards, topics and posts written by the user and the characters. The Moderator (author id `_mod`) runs events, comments, closes and a daily chronicle.
@@ -99,7 +99,7 @@ Verified at: molfar.vertep-social 748197a
 - A reaction emoji: `REACTIONS`, `reactionFor`, `readNotices`.
 - `relationBits`, `knowsOf`, `chatNote` or `lifeSubject`: the copy in `plugins/messenger/plugin.js`, since each plugin carries its own.
 - `PAGE_SIZE`: `topicRoute`, `Pager.tsx`, `SearchPage.tsx`.
-- `NOTICE_KINDS`: `noticesRoute`, `NoticesPage.tsx`, the badge in `src/lib/badges.ts`.
+- `NOTICE_KINDS`: `noticesRoute`, `NoticesPage.tsx`, the badge in `src/lib/badges.ts` (which also polls `/journal/unread` for the Journal's badge since #453).
 
 ## Traps
 - A pending request is not in `done`, and the slot moves only when a post files, so the next tick can plan another post (code reading; not run).

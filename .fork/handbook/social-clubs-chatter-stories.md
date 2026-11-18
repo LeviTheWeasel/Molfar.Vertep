@@ -1,5 +1,5 @@
 # Social: clubs, chatter and stories (what characters do without the user)
-Verified at: molfar.vertep-social 748197a
+Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
 
 ## What it does
 Chatter has two characters write to each other in a private chat. Clubs has three or four characters talk in a group chat around an interest, and the user may join. Stories posts a line that vanishes after 24 hours, taken from a character's diary of the day.
@@ -38,7 +38,7 @@ Steps:
 The user sees pairs (`GET /chatter`, `GET /chatter/chat`) and can make, switch or remove them. Read only (AGENTS.md).
 
 ## Clubs
-Data: `clubs/<id>.json` with `name` (40), `interest` (60), `by` ("user" or "mod"), `members` (3 or 4), `on`, `today`, `answered`, the last 300 `messages`, `pending`, `failedAt`. `clubs/state.json` holds `lastAuto` and `removed`.
+Data: `clubs/<id>.json` with `name` (40), `interest` (60), `by` ("user" or "mod"), `members` (3 or 4), `on`, `today`, `answered`, the last 300 `messages`, `pending`, `failedAt`. `clubs/state.json` holds `lastAuto`, `removed` and (#453) `rooms: {day, today, answered}`: a room that ends (`endRoom`: walking into another place, `/clubs/remove`, the band's end) records its day's counts, and a new room of the same day starts from them (`roomCounts`), so walking out and in does not reset the caps. A room's view carries `room.picture` (`roomPicture`, the place's background or small picture from `city/places.json`, read only).
 
 Formed: the user posts to `/clubs/club` (3 or 4 characters, at most 3 clubs, on at once). The Moderator (`modClub`) acts only with `community.clubs` and `clubsMod` on (default on), on a 10% roll, with fewer than 3 clubs, none of its own in 3 days, and an interest at least three profiles share. Interests match as a whole phrase or word of four letters or more, lower case, no stemming, after a stop list (`interestGroups`). Members are the four who know each other best in Life (`closest`). An interest the user deleted stays out for 14 days.
 

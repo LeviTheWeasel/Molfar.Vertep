@@ -1,5 +1,5 @@
 # Social: the Messenger plugin, its chats, memory note and recall
-Verified at: molfar.vertep-social 7587013
+Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
 
 ## What it does
 - One chat per character and persona pair; a model writes each reply in the character's voice.
@@ -85,7 +85,7 @@ History is `historyFor` over the window: user messages as "user", the character'
 - `src/screens/messenger/index.tsx`, `Messenger`: the screen, desktop and phone; the note sits in the info column.
 - `src/screens/messenger/live.ts`, `useLiveMessenger`: real mode; polls the contact list every `POLL_MS` (20 seconds).
 - `src/screens/messenger/real.ts`, `chatView`, `logItems`: pure helpers for real mode.
-- `src/screens/messenger/parts.tsx`, `ChatLog`, `Composer`: shared pieces for both layouts.
+- `src/screens/messenger/parts.tsx`, `ChatLog`, `Composer`: shared pieces for both layouts. `ChatLog` `backdrop` (#452): the place's picture behind the log (`.log.has-bd`, a scrim in `--base`); `GET /messenger/chat` adds `chat.place {id, name, picture}` only with `messengerPlace` on (`placeOf`), and `chatView(chat, id, backdrop)` keeps the last picture when a send answer has no `place`. The room log in `clubs.tsx` does the same from `room.picture`.
 - `src/screens/messenger/phone.tsx`, `PhoneList`, `PhoneChat`: phone layouts; the header opens the memory dialog.
 - `src/screens/messenger/memory.tsx`, `MemoryDialog`: the note (saved only when changed), new conversation (keep or drop the note), clear (asks first).
 - `src/screens/messenger/community.tsx`, `community-api.ts`: story bar and "characters talk" dialog.
