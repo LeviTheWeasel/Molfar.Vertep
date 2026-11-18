@@ -1,8 +1,8 @@
 # Social: the city (places, homes, who is where)
-Verified at: molfar.vertep-social 89bb944 (branch claude/city-c3-445, stacked on the journal J4 branch, not merged)
+Verified at: molfar.vertep-social 7d3c7a0 (branch claude/city-c4-445, stacked on C3 and the journal branches, not merged)
 
 ## What it does
-A town the characters live in. By rules, with no model call, it gives every profile a flat and works out, once per 3-hour band, where each character is. The user can look, listen, walk in and make places and districts of their own (issue 445, C1 to C3); packs and other plugins reading the place are later phases.
+A town the characters live in. By rules, with no model call, it gives every profile a flat and works out, once per 3-hour band, where each character is. The user can look, listen, walk in and make places and districts of their own (issue 445, C1 to C3), and other plugins read where a character is (C4); packs and the drawn layer are later phases.
 
 ## Owners
 - `plugins/city/plugin.js`, `stockTown`: the neutral present-day town (districts, places with an 8 by 7 open grid, tags, seats).
@@ -11,6 +11,7 @@ A town the characters live in. By rules, with no model call, it gives every prof
 - `plugins/city/plugin.js`, `placeAt`: where one profile is in a band (seeded draw, weights).
 - `plugins/city/plugin.js`, `whereAll`: everyone in id order, so every reader gets the same answer.
 - `plugins/city/plugin.js`, `cityView`, `handleRoute`: `GET /city`.
+- `plugins/life/plugin.js`, `plugins/chatter/plugin.js`, `plugins/clubs/plugin.js`, `plugins/stories/plugin.js`, `plugins/journal/plugin.js`, `plugins/messenger/plugin.js`, `cityNow`: C4, one read-only copy of the same function between `<city-shared>` markers (pinned by `test/city-readers.test.ts`); uses: Life's `seen` diary day (`shape.place`), `pickPair`, `pickTurn` (x3 together), stories and journal `place`, the messenger's `placeLineFor`.
 - `plugins/city/plugin.js`, `placeRoute`, `districtRoute`, `gridFromHours`, `hoursOf`: C3, the user's places and districts (`POST /city/place|place/remove|district|district/remove|reset`); a stock one the user edits becomes `by: "you"`.
 - `src/screens/city/editors.tsx`: the place and district forms; the picture is the profile's picture window (`src/screens/profiles/picture-dialog.tsx`, `initialPrompt`).
 - `plugins/city/plugin.js`, `listenView`: `GET /city/listen`, the last 6 lines (3 days) of chatter pairs and clubs whose members are at the place, read only, never the user's.
@@ -34,11 +35,16 @@ Not by the city itself (a test uses a model that throws on any use). A room is a
 4. A door is lit (home, awake), dark (home, status off) or out; where an absent character is shows only when the active persona is at least an acquaintance to them.
 
 ## If you change X, also touch Y
+- The shape of `city/now.json` or `city/places.json`: every copy of `cityNow` (six plugins) and `test/city-readers.test.ts`.
 - Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
-- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`, `test/city-readers.test.ts`.
 - A place field: `cleanPlace`, `placeRoute`, `cityView`, `src/screens/city/api.ts`, `editors.tsx`, the guide page `city`.
 
 ## Traps
+- `cityNow` returns null unless `now.json` is of the current band; a place read just after a band change may be missing for up to a minute.
+- A story's or post's `place` is a stored name: a stock place reads in English whatever the page's language.
+- Meeting at a place does not change who knows whom (People is untouched by design).
+- `messengerPlace` is off by default and costs about 30 tokens (27 to 40) per reply and first message.
 - The page translates a place or district name only when `by` is `stock`: anything the user touched shows its stored name, so editing a stock place freezes its name in the page's language of that moment.
 - At most 60 places and 12 districts; no place in the Homes district; Homes is never removed.
 - The picture is an asset url made by the picture window; the city never draws or uploads.
@@ -53,4 +59,4 @@ Not by the city itself (a test uses a model that throws on any use). A room is a
 `test/city.test.ts`, `test/rooms.test.ts`.
 
 ## Not verified
-Drawing or uploading a picture for a place in a real engine; A real engine across a band change; the room's header with "Leave the room" in a browser (the preview has no room); a real model in a room; a phone; how the weights feel with real profiles; the guide translations.
+Whether the place line changes how characters write with a real model; Drawing or uploading a picture for a place in a real engine; A real engine across a band change; the room's header with "Leave the room" in a browser (the preview has no room); a real model in a room; a phone; how the weights feel with real profiles; the guide translations.

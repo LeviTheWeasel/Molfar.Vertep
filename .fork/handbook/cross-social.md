@@ -7,11 +7,16 @@ rebuild this file. The page named in each heading has the detail.
 ## From `social-city.md`
 
 Change X, touch Y:
+- The shape of `city/now.json` or `city/places.json`: every copy of `cityNow` (six plugins) and `test/city-readers.test.ts`.
 - Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
-- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`, `test/rooms.test.ts`, `test/city-places.test.ts`, `test/city-readers.test.ts`.
 - A place field: `cleanPlace`, `placeRoute`, `cityView`, `src/screens/city/api.ts`, `editors.tsx`, the guide page `city`.
 
 Traps:
+- `cityNow` returns null unless `now.json` is of the current band; a place read just after a band change may be missing for up to a minute.
+- A story's or post's `place` is a stored name: a stock place reads in English whatever the page's language.
+- Meeting at a place does not change who knows whom (People is untouched by design).
+- `messengerPlace` is off by default and costs about 30 tokens (27 to 40) per reply and first message.
 - The page translates a place or district name only when `by` is `stock`: anything the user touched shows its stored name, so editing a stock place freezes its name in the page's language of that moment.
 - At most 60 places and 12 districts; no place in the Homes district; Homes is never removed.
 - The picture is an asset url made by the picture window; the city never draws or uploads.
