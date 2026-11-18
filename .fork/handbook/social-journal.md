@@ -1,13 +1,14 @@
 # Social: the journal (posts, and stories that ran out)
-Verified at: molfar.vertep-social 3dc882d (branch claude/journal-j1-444, not merged)
+Verified at: molfar.vertep-social 59f73ae (branch claude/journal-j2-444, stacked on the city branch, not merged)
 
 ## What it does
-Every profile and the user keep a journal of dated posts. In J1 a post comes from the user's own hand, or from a story that ran out after 24 hours. No model call. Characters writing posts, comments, subscriptions and friends-only reading are later phases (issue 444).
+Every profile and the user keep a journal of dated posts. A post comes from the user's own hand, from a story that ran out after 24 hours (J1, no model call), or from a character writing from its own diary of the day (J2, one model call a post, off by default). Comments, subscriptions and friends-only reading are later phases (issue 444).
 
 ## Owners
 - `plugins/journal/plugin.js`, `mirrorPass`: pure step that decides which stories are copied, dropped or filed.
 - `plugins/journal/plugin.js`, `onTick`: reads the stories plugin's items file (read only), files posts, clears journals of deleted characters.
 - `plugins/journal/plugin.js`, `cleanPost`, `readPosts`: every read goes through the cleaner; a damaged file reads as empty.
+- `plugins/journal/plugin.js`, `pickWriter`, `postSystem`, `fileWriterResult`, `readState`, `writeNow`: J2, a character writes from today's unused diary lines (read only); key `jp:<profile>`; state in `journal/state.json`.
 - `plugins/journal/plugin.js`, `handleRoute`: `/journal/feed|post|edit|remove|images|image`.
 - `plugins/profiles/plugin.js`, `RESET_PARTS.journal`: Start over's "Journals" part; `community.storiesToJournal` is merged in the settings there.
 - `src/screens/journal/`: the screen (`index.tsx`), calls (`api.ts`). `src/pictures/worker.ts`: draws pending pictures through `/journal/images`.
@@ -15,10 +16,11 @@ Every profile and the user keep a journal of dated posts. In J1 a post comes fro
 
 ## Data
 - `journal/<profileId|you>.json` {posts: [{id, at, title, text, image?, mood?, place?, tags, visible, from}]}. `from` is "you" or "story:<id>"; `visible` is stored for J4 and unused in J1; `place` is reserved for the City.
+- `journal/state.json` {day, counts, used, pending, failedAt} (J2); `mirror` and `state` are reserved names: not owner ids, not profile ids.
 - `journal/mirror.json` {stories, done}: a copy of each live story, and the last 1000 story ids already filed or removed.
 
 ## When a model is called
-Never. Pictures: a story filed with a pending picture is drawn by the Social page, as for stories.
+Only for a character's own post (J2): `community.journalPosts` on (off by default), Life on, the character online or away, under `journalPerDay` (default 1, 0 to 5), an unused diary entry of today, 8% a tick; the forum model, the profile's own wins. Stories filed in the journal and the user's posts never call one. Pictures: a story filed with a pending picture is drawn by the Social page, as for stories.
 
 ## Flow
 1. The stories plugin deletes a story at 24 h and a plugin writes only its own files, so every minute `onTick` copies live stories into the mirror.
@@ -42,4 +44,4 @@ Never. Pictures: a story filed with a pending picture is drawn by the Social pag
 `test/journal.test.ts`, `test/reset.test.ts`, `test/stories.test.ts`.
 
 ## Not verified
-A real engine over a day boundary; a phone; the guide translations (stale until refreshed).
+A real model for J2 (voice, truth to the diary, valid JSON); A real engine over a day boundary; a phone; the guide translations (stale until refreshed).
