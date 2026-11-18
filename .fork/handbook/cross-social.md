@@ -4,6 +4,20 @@ Built by a script from the pages of this handbook; do not edit by hand. When a p
 rebuild this file. The page named in each heading has the detail.
 
 
+## From `social-city.md`
+
+Change X, touch Y:
+- Band or schedule shape: `bandNow`, `statusAt` here are copies of the stories plugin's; change every copy.
+- The stock town: `src/screens/city/strings.ts` (names by id) and `test/city.test.ts`.
+- A place field: `cleanPlace`, `src/screens/city/api.ts`, the guide page `city`.
+
+Traps:
+- Weights and the work hours are guesses.
+- `workplace` is read but nothing writes it yet, so na and dnd mean home.
+- Clearing all profiles leaves `city/` until a new profile appears (the tick does nothing on an empty list).
+- The place plate is cosmetic: tiles show everyone in a place anyway.
+
+
 ## From `social-clubs-chatter-stories.md`
 
 Change X, touch Y:
