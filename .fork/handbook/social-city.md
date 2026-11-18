@@ -45,7 +45,7 @@ Not by the city itself (a test uses a model that throws on any use). A room is a
 - The place plate is cosmetic: tiles show everyone in a place anyway.
 
 ## Tests that guard it
-`test/city.test.ts`.
+`test/city.test.ts`, `test/rooms.test.ts`.
 
 ## Not verified
 A real engine across a band change; the room's header with "Leave the room" in a browser (the preview has no room); a real model in a room; a phone; how the weights feel with real profiles; the guide translations.
