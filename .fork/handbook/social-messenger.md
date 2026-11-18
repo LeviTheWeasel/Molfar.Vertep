@@ -1,5 +1,5 @@
 # Social: the Messenger plugin, its chats, memory note and recall
-Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at f28fc28 (main, Social 0.18.0); the facts ledger (#446, M1) lines on Social branch claude/memory-ledger-446
+Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at f28fc28 (main, Social 0.18.0); the facts ledger (#446, M1) lines at e8893c8; the M2 lines (Remembered, pinned messages) on Social branch claude/memory-m2-446
 
 ## What it does
 - One chat per character and persona pair; a model writes each reply in the character's voice.
@@ -66,7 +66,8 @@ History is `historyFor` over the window: user messages as "user", the character'
 - Call: `requestFold`, key `sum:<profile>:<upto>`, temperature 0.3, `max_tokens` 600.
 - Output (#446): the model is asked for JSON `{facts: [{text, kind, private?, replaces?}], note}`; `parseFoldAnswer` takes the first `{` to the last `}`. `fileFold` merges the facts (`mergeFacts`) and stores the note `{text, upto, at}` through `cleanNote` (`SUMMARY_MAX`, 1500; the prompt asks for about 80 words). Anything that is not such an object (plain text, broken JSON) is the note alone and the facts stay. A JSON answer with facts and no note keeps the old note. `requestFold` shows the model the known facts with ids (`factsForFold`, 3000 characters), `max_tokens` 900.
 - Merge (`mergeFacts`): the same words (`factNorm`) only refresh `from`; `replaces` swaps a fact of the model's own and keeps its `private`; a pinned or `by: "you"` target is never replaced (the model's change is skipped); at most 12 per fold. `enforceCeiling`: over 200 the oldest unpinned jokes and shared, then other facts (the user's last), go to `factsArchive`; facts just added or restored are never picked.
-- Prompt (`factsFor`, in `contextOf` as `facts`, `systemPromptFor` `opts.facts`): at most 1500 characters, pinned first, newest six, then by shared word stems with the last three messages, shown oldest first; nothing with `messengerSummary` off.
+- `message.used` (#446, M2): `{f: fact ids (30), r: recalled message ids (3), p: pinned message ids (5), n: 1}` on a reply; `requestReply` puts it on `chat.pending.used` (`usedFor`), `fileReply` moves it to the message; `cleanUsed` cleans it on read. `message.pinned`: the time the user pinned it (`pinRoute`, `POST /messenger/pin {id, messageId, pinned}`, 20 at most). `pinnedFor`: pinned messages after the last divider and outside the window, the latest 5, oldest first, 900 characters, into `systemPromptFor` `opts.pinned` whatever the Recall and note switches say; `recallFor` skips pinned ones and returns ids.
+- Prompt (`factsFor`, `factsPick`, in `contextOf` as `facts`, `systemPromptFor` `opts.facts`): at most 1500 characters, pinned first, newest six, then by shared word stems with the last three messages, shown oldest first; nothing with `messengerSummary` off.
 - Routes: `GET`/`POST /messenger/facts` (`factsRoute`: add, update, delete, restore); `GET /messenger/chat` only carries `factCount` and `factPinned`. New conversation without the note keeps only the pinned facts; clear drops all.
 - Failure: `foldFailAt` is set; the old note stays; the user sees nothing.
 - Edit: `summaryRoute` sets `edited: true`; the dialog limit is `NOTE_MAX`.
@@ -92,6 +93,7 @@ History is `historyFor` over the window: user messages as "user", the character'
 - `src/screens/messenger/parts.tsx`, `ChatLog`, `Composer`: shared pieces for both layouts. `ChatLog` `backdrop` (#452): the place's picture behind the log (`.log.has-bd`, a scrim in `--base`); `GET /messenger/chat` adds `chat.place {id, name, picture}` only with `messengerPlace` on (`placeOf`), and `chatView(chat, id, backdrop)` keeps the last picture when a send answer has no `place`. The room log in `clubs.tsx` does the same from `room.picture`.
 - `src/screens/messenger/phone.tsx`, `PhoneList`, `PhoneChat`: phone layouts; the header opens the memory dialog.
 - `src/screens/messenger/memory.tsx`, `MemoryDialog`: the note (saved only when changed), new conversation (keep or drop the note), clear (asks first), and a "Facts…" step.
+- `src/screens/messenger/remembered.tsx`, `Remembered`: the line under a reply (facts are fetched by `loadFacts` when it opens); `parts.tsx` `ChatLog` draws it and the pin button (`ChatMemory` prop, built in `index.tsx` as `chatMemory`, also for the phone chat); `memory.tsx` lists the pinned messages with Unpin.
 - `src/screens/messenger/facts.tsx`, `FactsPage`, `facts-api.ts`: the facts list (add, edit, pin, private or public, delete after a question, Archive tab). Preview: `?screen=messenger&view=chat&dialog=facts` (a made-up ledger).
 - `src/screens/messenger/community.tsx`, `community-api.ts`: story bar and "characters talk" dialog.
 - `src/screens/messenger/clubs.tsx`, `clubs-api.ts`, `clubs-model.ts`: clubs; not covered here.
@@ -100,6 +102,7 @@ History is `historyFor` over the window: user messages as "user", the character'
 ## If you change X, also touch Y
 - A chat field: `readChat`, `writeChat`, `viewOf`, and the types in `real.ts`.
 - The window, note or fold: `windowMessages`, `foldPlan`, `requestFold`, `SUMMARY_MAX`, `FOLD_INPUT_MAX`, `FOLD_MSG_MAX`, `NOTE_MAX`. The fold answer: `parseFoldAnswer`, `fileFold`, `mergeFacts`, `factsFor`, `FACTS_PROMPT_MAX`.
+- A message field (`used`, `pinned`): `readChat`, `cleanUsed`, `EngineMessage` and `logItems` in `real.ts`, `LogItem` in `src/mock/messenger.ts`.
 - A fact field: `cleanFact`, `cleanLedger`, `factsRoute`, `Fact` in `facts-api.ts`, the preview ledger there.
 - `knowsOf`, `youFor`, `metLine`: their copies in the forum plugin (pinned by tests).
 - A route key (`reply`, `rq`, `newsum`, `rep:`, `sum:`, `fm:`): second passes read `host.llm.results` by key.
@@ -112,12 +115,13 @@ History is `historyFor` over the window: user messages as "user", the character'
 - A chat with a pending reply is never folded; a failed chat keeps `pending`, so its note waits for a retry or a new conversation.
 - A failed reply is not retried by the tick; a lost call is asked again after 5 minutes; a failed fold is silent.
 - The forum and clubs read only the note, not the facts (M3 and M4 of #446 are not built); `private` is stored and shown but nothing reads it yet.
-- Facts are not marked in a chat reply (M2); stem overlap in `factsFor` is a stand-in for "nearest in meaning" (the recall vectors are not used for facts).
+- Writing first has no `used`; the forum and clubs do not read pinned messages. Stem overlap in `factsFor` is a stand-in for "nearest in meaning" (the recall vectors are not used for facts).
 - Pictures are drawn by the open Social page only (`docs/DECISIONS.md`).
 - Recalled text is data: `recallText` turns angle brackets into spaces and double quotes into single quotes.
 
 ## Tests that guard it
 - `test/messenger-plugin.test.ts`, `test/messenger-memory.test.ts`, `test/messenger-recall.test.ts`: routes, first messages, the note, recall.
+- `test/messenger-m2.test.ts`: `used` on replies (route and tick), `cleanUsed`, the pin route and its limits, `pinnedFor`, recall skipping a pinned message.
 - `test/messenger-facts.test.ts`: the ledger (JSON and plain answers, merge, locks, ceiling and archive, prompt selection, routes).
 - `test/messenger-real.test.ts`: the helpers in `real.ts`.
 - `test/chat-pairs.test.ts`, `test/persona-context.test.ts`, `test/chat-life.test.ts`, `test/stickers.test.ts`, `test/pictures.test.ts`.
