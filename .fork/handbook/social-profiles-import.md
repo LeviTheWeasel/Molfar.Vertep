@@ -65,7 +65,7 @@ Written by `PUT /profiles/<id>` (id: letters, digits, `_`, `-`, 60 at most). Eac
 - Import: `POST /you/import {id}` reads `personas/<id>.json`; the import model writes a short third-person About, or it stays empty when there is no description. The id is `pe-<persona id>`.
 - Characters see only the active persona's name and About (600 characters at most). Deleting the active persona passes it to the first left; `forgetPersona` removes its chats and `life/people` entries.
 - Deleting a profile (`DELETE /profiles/<id>`) removes its profile file, diary, people file, chats, recall cache and club places. No picture asset is deleted.
-- Start over (`POST /settings/reset`): profiles also clear chats and diaries; sticker packs stay.
+- Start over (`POST /settings/reset`): profiles also clear chats, diaries and journals (`journal` part, own posts included); sticker packs stay.
 
 ## The picture worker
 1. A character asks for a picture with `[[image: ...]]`, or an `image` field on a forum topic, only when Settings > Pictures is on and the daily cap (`perDay`, 2 by default) is not used.

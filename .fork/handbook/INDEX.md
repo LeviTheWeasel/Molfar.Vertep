@@ -37,6 +37,7 @@ by the owner. In force since 2026-11-14: `CLAUDE.md` (rule and "Done means") and
 | Social Forum: the tick, what a character knows, gossip, polls, the Moderator | `social-forum.md` |
 | Social profiles, the import from Roleplay, the You page, the picture worker, stickers | `social-profiles-import.md` |
 | Social clubs, chatter and stories | `social-clubs-chatter-stories.md` |
+| Social journal: posts, expired stories filed in a journal | `social-journal.md` |
 | Every trap and every "change X, touch Y" of one repo on one page | `cross-engine.md`, `cross-roleplay.md`, `cross-social.md` |
 
 Verified at: batches 1 and 2 at engine `8310b23`, Roleplay `91eec33`, Social `7be1624`; batch 3 at

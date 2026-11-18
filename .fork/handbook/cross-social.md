@@ -39,6 +39,20 @@ Traps:
 - Clubs are not in this plugin.
 
 
+## From `social-journal.md`
+
+Change X, touch Y:
+- The story's life (`STORY_MS`, the sweep in `plugins/stories/plugin.js`): the mirror's 24 h and 5 minute slack in `plugins/journal/plugin.js`, `test/journal.test.ts`.
+- A post field: `cleanPost`, `src/screens/journal/api.ts`, the guide page `journal`.
+- Reset parts: `RESET_PARTS` and `RESET_WITH_PROFILES` in the profiles plugin, `src/screens/settings/reset-api.ts`, `test/reset.test.ts`.
+
+Traps:
+- Clearing the characters also clears the user's own posts (the part goes with the profiles so no journal waits under a reused id).
+- The tick removes a journal whose profile is gone, but only when the profiles folder lists at least one profile.
+- Stories that vanished before the journal shipped cannot be recovered.
+- The user's key is "you", so a profile id "you" is refused.
+
+
 ## From `social-life.md`
 
 Change X, touch Y:
