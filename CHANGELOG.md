@@ -7,7 +7,10 @@ Versions here count from 0.1.0 and are independent of upstream's.
 
 ## Unreleased
 
+## 1.17.1 (2026-11-18)
+
 - **A damaged `users.json` no longer makes the Windows program close without a word (#440).** After a power cut or a forced shutdown the accounts file could be left empty or cut off (it was rewritten in place), and the program printed its first log line and closed at once, with no way to read why. Now `users.json` and `sessions.json` are saved through a temp file and a rename, and a file that still cannot be read stops the start with a message that names it, says the accounts' data in `users/` is untouched, and what to do (rename the file, start again, create the account again). Nothing is reset silently. Every fatal exit of a downloaded program on Windows now prints the reason in one line with the log file's path and waits for Enter, instead of the window vanishing; the long stack stays in the log file.
+- **An app frame's storage writes are cheaper (#418).** The frame's snapshot of the app's storage (kept in its address so a reload keeps what was typed) was base64-encoded one character at a time, about 120 ms of every write with 1.2 MB stored. It is now encoded in slices (same output, about 20 ms). The bigger fix for the typing lag is in Roleplay's message box, which now saves the draft after a pause instead of on every key.
 
 ## 1.17.0 (2026-11-17)
 
