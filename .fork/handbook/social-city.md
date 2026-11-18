@@ -1,5 +1,5 @@
 # Social: the city (places, homes, who is where)
-Verified at: molfar.vertep-social db443f1 (branch claude/city-journal-452-453, not merged; C1 to C4 shipped in Social 0.17.0)
+Verified at: molfar.vertep-social f28fc28 (main, Social 0.18.0)
 
 ## What it does
 A town the characters live in. By rules, with no model call, it gives every profile a flat and works out, once per 3-hour band, where each character is. The user can look, listen, walk in and make places and districts of their own (issue 445, C1 to C3), and other plugins read where a character is (C4). #452 adds a wide picture to places and districts; #453 adds workplaces, shared flats, rooms that share the day's caps and stock names in the page's language. C5 draws each district as an isometric plate above the tiles. Packs (C6) are a later phase.

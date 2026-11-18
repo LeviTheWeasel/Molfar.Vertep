@@ -1,5 +1,5 @@
 # Social: the Messenger plugin, its chats, memory note and recall
-Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
+Verified at: molfar.vertep-social 7587013; the #452 and #453 lines at f28fc28 (main, Social 0.18.0)
 
 ## What it does
 - One chat per character and persona pair; a model writes each reply in the character's voice.

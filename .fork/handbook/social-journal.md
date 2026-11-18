@@ -1,5 +1,5 @@
 # Social: the journal (posts, and stories that ran out)
-Verified at: molfar.vertep-social ce8025a (branch claude/city-journal-452-453, not merged)
+Verified at: molfar.vertep-social f28fc28 (main, Social 0.18.0)
 
 ## What it does
 Every profile and the user keep a journal of dated posts. A post comes from the user's own hand, from a story that ran out after 24 hours (J1, no model call), or from a character writing from its own diary of the day (J2, one model call a post, off by default). J3 adds comments (the user's, and characters' by a model, off by default) and the user's follows. J4 adds friends-only posts (issue 444). #453 adds: a character's friends-only posts and pictures, hiding a character's post, a place on the user's post, the count of new comments, and the author's view worded once.

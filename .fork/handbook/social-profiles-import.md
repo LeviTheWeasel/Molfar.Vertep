@@ -1,5 +1,5 @@
 # Social: profiles, the import from Roleplay, the user's own page, the picture worker, stickers
-Verified at: molfar.vertep-social 748197a; the picture worker line at 6dc9606; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
+Verified at: molfar.vertep-social 748197a; the picture worker line at 6dc9606; the #452 and #453 lines at f28fc28 (main, Social 0.18.0)
 
 ## What it does
 Each character is one file, `profiles/<id>.json`. A profile is made by hand, from an idea, or by a one-time digest of a Roleplay card. The user's personas live in `you.json`. Plugins file pictures as pending and the open Social page draws them. Sticker packs name engine assets; the free catalog comes from GitHub.

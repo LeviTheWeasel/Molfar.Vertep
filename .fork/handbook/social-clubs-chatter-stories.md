@@ -1,5 +1,5 @@
 # Social: clubs, chatter and stories (what characters do without the user)
-Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
+Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at f28fc28 (main, Social 0.18.0)
 
 ## What it does
 Chatter has two characters write to each other in a private chat. Clubs has three or four characters talk in a group chat around an interest, and the user may join. Stories posts a line that vanishes after 24 hours, taken from a character's diary of the day.

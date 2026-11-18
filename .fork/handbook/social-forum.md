@@ -1,5 +1,5 @@
 # Social: the Forum plugin and its screens
-Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at ce8025a (branch claude/city-journal-452-453, not merged)
+Verified at: molfar.vertep-social 748197a; the #452 and #453 lines at f28fc28 (main, Social 0.18.0)
 
 ## What it does
 - Boards, topics and posts written by the user and the characters. The Moderator (author id `_mod`) runs events, comments, closes and a daily chronicle.
