@@ -285,7 +285,7 @@ describe("exfiltration ways out of an app page", () => {
       expect(host.allowedRequest("roleplay", method, path, true), path).toBe(true);
     }
     // downloading a model to this computer takes the user's disk and bandwidth: the shell's screen only, never an app
-    for (const [method, path] of [["GET", "/v1/embeddings/local"], ["POST", "/v1/embeddings/local/download"], ["POST", "/v1/embeddings/local/cancel"], ["POST", "/v1/embeddings/local/connect"], ["DELETE", "/v1/embeddings/local/bge-m3"]] as const) {
+    for (const [method, path] of [["GET", "/v1/embeddings/models"], ["GET", "/v1/embeddings/local"], ["POST", "/v1/embeddings/local/download"], ["POST", "/v1/embeddings/local/cancel"], ["POST", "/v1/embeddings/local/connect"], ["DELETE", "/v1/embeddings/local/bge-m3"]] as const) {
       expect(host.allowedRequest("roleplay", method, path), path).toBe(false);
       expect(host.allowedRequest("roleplay", method, path, true), path).toBe(false);
     }

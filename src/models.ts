@@ -189,6 +189,17 @@ const OPENROUTER_PROVIDER_ID = "openrouter";
 const OPENROUTER_EMBED_URL = "https://openrouter.ai/api/v1/embeddings";
 export const DEFAULT_EMBED_MODEL = "text-embedding-3-small";
 export const DEFAULT_OPENROUTER_EMBED_MODEL = "qwen/qwen3-embedding-4b";
+/** OpenRouter's public list of its embedding models (no key, nothing of the user's is sent). */
+const OPENROUTER_EMBED_MODELS_URL = "https://openrouter.ai/api/v1/embeddings/models";
+/** What an embedding model looks like in an OpenAI-style /models list. */
+const EMBEDDER_ID = /embed|nomic|bge|e5-|gte-|minilm|mxbai|arctic|voyage|jina/i;
+
+/** One model offered in Settings > Memory: its id (what is sent), a readable name and a short note (the price). */
+export interface EmbedModelOption {
+  id: string;
+  name: string;
+  note?: string;
+}
 
 /** NanoGPT image models: provider id in refs, and their `api`. */
 const NANOGPT_IMAGES = "nanogpt";
@@ -777,6 +788,53 @@ export class UserModelService {
     const set = (opts.settings ?? this.readEmbedSettings()).model;
     if (set) return set;
     return opts.openrouter ? DEFAULT_OPENROUTER_EMBED_MODEL : DEFAULT_EMBED_MODEL;
+  }
+
+  private embedModelLists = new Map<string, { at: number; list: EmbedModelOption[] }>();
+
+  /**
+   * The embedding models a place offers, for the Settings picker: OpenRouter's public catalog, or a custom
+   * connection's own /models list (the ids that look like embedders; every id when none does). null = nothing to
+   * list for this provider ("auto", "local") or it did not answer. Remembered 10 minutes.
+   */
+  async embedModelList(provider: string): Promise<EmbedModelOption[] | null> {
+    if (provider === "auto" || provider === "local") return null;
+    const hit = this.embedModelLists.get(provider);
+    if (hit && Date.now() - hit.at < 600_000) return hit.list;
+    let list: EmbedModelOption[] | null = null;
+    try {
+      if (provider === "openrouter") {
+        const res = await fetch(OPENROUTER_EMBED_MODELS_URL, { signal: AbortSignal.timeout(8_000) });
+        if (res.ok) {
+          const body = (await res.json()) as { data?: { id?: unknown; name?: unknown; pricing?: { prompt?: unknown } }[] };
+          list = (body.data ?? []).flatMap((m) => {
+            if (typeof m.id !== "string" || !m.id) return [];
+            const per = Number(m.pricing?.prompt) * 1e6;
+            return [{ id: m.id, name: typeof m.name === "string" && m.name ? m.name : m.id, ...(Number.isFinite(per) && per > 0 ? { note: `$${Number(per.toPrecision(2))} / 1M` } : {}) }];
+          });
+        }
+      } else {
+        const def = readConnections(this.paths).connections[provider];
+        if (def && !def.providerId && def.baseUrl && def.api === "openai-completions") {
+          const local = isLocalEndpoint(def.baseUrl);
+          if (new URL(def.baseUrl).protocol === "https:" || local) {
+            const cred = await new FileCredentialStore(this.paths.auth).read(authTarget(def, provider));
+            const key = cred && cred.type === "api_key" && cred.key && connectionKeyUsable(def, provider, cred) ? cred.key : null;
+            if (key || local) {
+              const res = await fetch(def.baseUrl.replace(/\/$/, "") + "/models", { headers: key ? { authorization: `Bearer ${key}` } : {}, signal: AbortSignal.timeout(8_000) });
+              if (res.ok) {
+                const body = (await res.json()) as { data?: { id?: unknown }[] };
+                const ids = (body.data ?? []).map((m) => m.id).filter((x): x is string => typeof x === "string" && x !== "");
+                const some = ids.filter((id) => EMBEDDER_ID.test(id));
+                list = (some.length ? some : ids).slice(0, 300).map((id) => ({ id, name: id }));
+              }
+            }
+          }
+        }
+      }
+    } catch { /* unreachable or malformed: no list, the field stays a plain field */ }
+    if (list?.length) this.embedModelLists.set(provider, { at: Date.now(), list });
+    return list?.length ? list : null;
   }
 
   /** The OpenRouter builtin connection's key, or null. The endpoint is a
