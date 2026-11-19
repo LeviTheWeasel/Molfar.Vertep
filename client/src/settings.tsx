@@ -23,6 +23,7 @@ import {
   type AgentsMdStatus,
   embeddingsApi,
   type EmbeddingsConfig,
+  type EmbedModelOption,
   prefs,
   authApi,
   adminUsersApi,
@@ -1119,6 +1120,9 @@ function MemoryMeaningSection() {
   const [err, setErr] = useState("")
   const [probeState, setProbeState] = useState<"checking" | "ok" | "not-ok" | null>(null)
   const [probeInfo, setProbeInfo] = useState<{ via: string | null; model: string | null }>({ via: null, model: null })
+  const [options, setOptions] = useState<EmbedModelOption[]>([])
+  // an edit not saved yet must survive every other refresh of this section (a provider change, a saved key, a downloaded model)
+  const dirtyRef = useRef(false)
 
   const probeThen = (cfg: EmbeddingsConfig | null) => {
     if (!cfg || !canCheckEmbeddings(cfg)) {
@@ -1168,17 +1172,34 @@ function MemoryMeaningSection() {
     }
   }, [])
 
+  // the models the chosen provider offers, for the search list under the field
+  const listFor = config?.provider ?? null
+  useEffect(() => {
+    if (!listFor || listFor === "auto") {
+      setOptions([])
+      return
+    }
+    let live = true
+    embeddingsApi
+      .models(listFor)
+      .then((r) => live && setOptions(r.models))
+      .catch(() => live && setOptions([]))
+    return () => {
+      live = false
+    }
+  }, [listFor])
+
   const flashSaved = () => {
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }
 
   /** Apply a save answer (it carries no provider list) and re-check. */
-  const applySaved = (result: Omit<EmbeddingsConfig, "providers">) => {
+  const applySaved = (result: Omit<EmbeddingsConfig, "providers">, force: boolean) => {
     if (!config) return
     const next: EmbeddingsConfig = { ...config, ...result, providers: config.providers }
     setConfig(next)
-    setDraft(result.model)
+    if (force || !dirtyRef.current) setDraft(result.model)
     flashSaved()
     void runProbe(next)
   }
@@ -1187,7 +1208,8 @@ function MemoryMeaningSection() {
     setBusy(true)
     setErr("")
     try {
-      applySaved(await embeddingsApi.save(body))
+      // saving the model itself (or going back to the default) sets the field; saving only the provider leaves an unsaved edit alone
+      applySaved(await embeddingsApi.save(body), body.model !== undefined)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -1210,7 +1232,7 @@ function MemoryMeaningSection() {
       setKeyDraft("")
       const cfg = await embeddingsApi.config()
       setConfig(cfg)
-      setDraft(cfg.model)
+      if (!dirtyRef.current) setDraft(cfg.model)
       flashSaved()
       void runProbe(cfg)
     } catch (e) {
@@ -1227,6 +1249,12 @@ function MemoryMeaningSection() {
   const openRouterReady = config.providers.find((p) => p.id === "openrouter")?.ready ?? false
   const showKeyField = !openRouterReady && (config.provider === "openrouter" || (config.provider === "auto" && !anyReady))
   const modelDirty = draft.trim() !== config.model && draft.trim() !== ""
+  dirtyRef.current = modelDirty
+  // Enter, leaving the field, or picking a name from the list saves it: a phone keyboard has no other way to say "done"
+  const commitModel = (value: string) => {
+    const v = value.trim()
+    if (!busy && v !== "" && v !== config.model) void save({ model: v })
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -1270,7 +1298,7 @@ function MemoryMeaningSection() {
             .config()
             .then((cfg) => {
               setConfig(cfg)
-              setDraft(cfg.model)
+              if (!dirtyRef.current) setDraft(cfg.model)
               probeThen(cfg)
             })
             .catch(() => undefined)
@@ -1312,8 +1340,27 @@ function MemoryMeaningSection() {
             autoCorrect="off"
             maxLength={200}
             disabled={busy}
-            onChange={(e) => setDraft(e.currentTarget.value)}
+            list="embed-model-options"
+            enterKeyHint="done"
+            onChange={(e) => {
+              const v = e.currentTarget.value
+              setDraft(v)
+              // a name picked from the list arrives whole in one change: that is a choice, not typing
+              if (options.some((o) => o.id === v.trim())) commitModel(v)
+            }}
+            onBlur={(e) => commitModel(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                commitModel(e.currentTarget.value)
+              }
+            }}
           />
+          <datalist id="embed-model-options">
+            {options.map((o) => (
+              <option key={o.id} value={o.id} label={o.note ? `${o.name} · ${o.note}` : o.name} />
+            ))}
+          </datalist>
           <Button variant="neutral" size="normal" disabled={busy || !modelDirty} onClick={() => void save({ model: draft.trim() })}>
             {tr("Save")}
           </Button>
@@ -1323,7 +1370,14 @@ function MemoryMeaningSection() {
             </Button>
           )}
         </div>
-        {!config.modelSet && <span className="text-11 text-ink-faint">{tr("Default: {model}", { model: config.model })}</span>}
+        {modelDirty && !busy && <span className="text-11 text-warning">{tr("Not saved yet. Press Enter or Save.")}</span>}
+        {options.length > 0 && <span className="text-11 text-ink-faint">{tr("Start typing to search the {count} models this provider offers.", { count: options.length })}</span>}
+        {!config.modelSet &&
+          (config.provider === "auto" ? (
+            <span className="text-11 text-ink-faint">{tr("Default: {api} for API connections, {openrouter} for OpenRouter", { api: config.defaults.api, openrouter: config.defaults.openrouter })}</span>
+          ) : (
+            <span className="text-11 text-ink-faint">{tr("Default: {model}", { model: config.model })}</span>
+          ))}
         <span className="text-11 leading-4 text-ink-faint">{tr("Vectors for matching by meaning stay on the device that made them and are not synced, so a computer and a phone can use different models. A model that is the same under two names (bge-m3 on this computer and on OpenRouter) keeps its vectors.")}</span>
       </div>
 

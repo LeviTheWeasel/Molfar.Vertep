@@ -27,7 +27,7 @@ import { latestRelease } from "../updates.js";
 import { SELF_UPDATE, startUpdate, updateState } from "../self-update.js";
 import { agentReadDenied, DEFAULT_PERSONA, restoreWorkspaceAgentsMd, userPaths, safeResolve, workspaceAgentsMdStatus, type UserPaths } from "../paths.js";
 import * as git from "../git.js";
-import { UserModelService, ModelNotConfiguredError, type ModelPricing } from "../models.js";
+import { UserModelService, ModelNotConfiguredError, DEFAULT_EMBED_MODEL, DEFAULT_OPENROUTER_EMBED_MODEL, type ModelPricing } from "../models.js";
 import { findLocalModel, type LocalModelId } from "../embed-local/catalog.js";
 import { sharedLocalEmbedder, type LocalEmbedder } from "../embed-local/index.js";
 import { effectiveParams, ModelParamsError, readModelParams, writeModelParams } from "../model-params.js";
@@ -1598,7 +1598,16 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
       modelSet: st.model !== null,
       provider: st.provider,
       providers: models.embedProviders(),
+      // what Automatic sends when no model is chosen: the API connections get the first, OpenRouter the second
+      defaults: { api: DEFAULT_EMBED_MODEL, openrouter: DEFAULT_OPENROUTER_EMBED_MODEL },
     });
+  });
+  // the models a provider offers, for the picker in Settings > Memory (shell only: an app never needs the list)
+  app.get("/v1/embeddings/models", async (c) => {
+    const models = c.get("models");
+    const provider = c.req.query("provider") || models.readEmbedSettings().provider;
+    const list = await models.embedModelList(provider);
+    return c.json({ provider, models: list ?? [] });
   });
   app.put("/v1/embeddings/config", async (c) => {
     const body = await c.req.json<{ model?: unknown; provider?: unknown }>().catch(() => ({}) as { model?: unknown; provider?: unknown });
@@ -1621,6 +1630,8 @@ export function buildApp(deps: AppDeps): Hono<AppEnv> {
       ...(typeof body.provider === "string" ? { provider: body.provider } : {}),
     });
     const st = models.readEmbedSettings();
+    // a device's own choice has no other trace: this line says what was saved, if a later sync seems to undo it
+    log.info(`[embeddings] this device's choice saved: provider=${st.provider} model=${st.model ?? "(default)"}`);
     return c.json({ ok: true, model: models.embedModelName({ settings: st, openrouter: st.provider === "openrouter" }), modelSet: st.model !== null, provider: st.provider });
   });
 
