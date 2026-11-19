@@ -278,6 +278,16 @@ export interface EmbeddingsConfig {
   /** "auto" | "openrouter" | a custom connection id */
   provider: string
   providers: EmbeddingProvider[]
+  /** what Automatic sends when no model is chosen: API connections get `api`, OpenRouter gets `openrouter` */
+  defaults: { api: string; openrouter: string }
+}
+
+/** One model a provider offers (the picker in Settings > Memory). */
+export interface EmbedModelOption {
+  id: string
+  name: string
+  /** the price, when the catalog says */
+  note?: string
 }
 
 /** The embeddings model that runs on this computer (#255): one button downloads it and connects it. */
@@ -317,6 +327,8 @@ export const embeddingsApi = {
   config: () => api<EmbeddingsConfig>("GET", "/v1/embeddings/config"),
   /** model: null goes back to the default */
   save: (body: { model?: string | null; provider?: string }) => api<{ ok: boolean } & Omit<EmbeddingsConfig, "providers">>("PUT", "/v1/embeddings/config", body),
+  /** the models a provider offers (OpenRouter's catalog, or a connection's own list); empty for Automatic */
+  models: (provider: string) => api<{ provider: string; models: EmbedModelOption[] }>("GET", `/v1/embeddings/models?provider=${encodeURIComponent(provider)}`),
   /** one tiny live call; ok = vectors came back */
   probe: () => api<{ ok: boolean; via: string | null; model: string | null; error?: string }>("POST", "/v1/embeddings/probe"),
 }

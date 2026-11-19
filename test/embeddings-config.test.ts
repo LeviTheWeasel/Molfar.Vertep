@@ -33,7 +33,8 @@ afterEach(() => {
 });
 
 const h = () => ({ authorization: `Bearer ${token}`, "content-type": "application/json" });
-const get = async () => (await app.request("/v1/embeddings/config", { headers: h() })).json() as Promise<{ model: string; modelSet: boolean; provider: string; providers: { id: string; name: string; kind: string; ready: boolean }[] }>;
+const get = async () => (await app.request("/v1/embeddings/config", { headers: h() })).json() as Promise<{ model: string; modelSet: boolean; provider: string; providers: { id: string; name: string; kind: string; ready: boolean }[]; defaults: { api: string; openrouter: string } }>;
+const listOf = async (provider?: string) => (await app.request(`/v1/embeddings/models${provider ? `?provider=${provider}` : ""}`, { headers: h() })).json() as Promise<{ provider: string; models: { id: string; name: string; note?: string }[] }>;
 const put = (body: unknown) => app.request("/v1/embeddings/config", { method: "PUT", headers: h(), body: JSON.stringify(body) });
 
 describe("embeddings config routes", () => {
@@ -43,6 +44,8 @@ describe("embeddings config routes", () => {
       modelSet: false,
       provider: "auto",
       providers: [{ id: "openrouter", name: "OpenRouter", kind: "builtin", ready: false }],
+      // Automatic sends the first to API connections and the second to OpenRouter: Settings says both
+      defaults: { api: "text-embedding-3-small", openrouter: "qwen/qwen3-embedding-4b" },
     });
   });
 
@@ -86,5 +89,34 @@ describe("embeddings config routes", () => {
     const made = await app.request("/v1/settings/connections", { method: "POST", headers: h(), body: JSON.stringify({ name: "OpenRouter", providerId: "openrouter", key: "sk-or-test" }) });
     expect(made.status).toBe(201);
     expect((await get()).providers[0]).toEqual({ id: "openrouter", name: "OpenRouter", kind: "builtin", ready: true });
+  });
+
+  it("the model picker: OpenRouter's public catalog with prices, a connection's own list filtered to embedders, nothing for Automatic", async () => {
+    const real = globalThis.fetch;
+    const calls: string[] = [];
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.startsWith("http://127.0.0.1:")) calls.push(url);
+      if (url === "https://openrouter.ai/api/v1/embeddings/models") {
+        return new Response(JSON.stringify({ data: [{ id: "baai/bge-m3", name: "BAAI: bge-m3", pricing: { prompt: "0.00000001" } }, { id: "x/free", pricing: { prompt: "0" } }, { name: "no id" }] }));
+      }
+      if (url === "http://127.0.0.1:1/v1/models") return new Response(JSON.stringify({ data: [{ id: "llama-3" }, { id: "nomic-embed-text" }, { id: "bge-small" }] }));
+      return real(input);
+    }) as typeof fetch;
+    try {
+      // Automatic and a local model have no list of their own
+      expect((await listOf()).models).toEqual([]);
+      expect((await listOf("local")).models).toEqual([]);
+      const or = await listOf("openrouter");
+      expect(or.models).toEqual([{ id: "baai/bge-m3", name: "BAAI: bge-m3", note: "$0.01 / 1M" }, { id: "x/free", name: "x/free" }]);
+      const made = await app.request("/v1/settings/connections", { method: "POST", headers: h(), body: JSON.stringify({ name: "Local", api: "openai-completions", baseUrl: "http://127.0.0.1:1/v1", models: [{ id: "m" }] }) });
+      const { connection } = (await made.json()) as { connection: { id: string } };
+      expect((await listOf(connection.id)).models.map((m) => m.id)).toEqual(["nomic-embed-text", "bge-small"]);
+      // an unknown connection id is just an empty list, never a request
+      expect((await listOf("nope")).models).toEqual([]);
+      expect(calls).toEqual(["http://127.0.0.1:1/v1/models"]);
+    } finally {
+      globalThis.fetch = real;
+    }
   });
 });
